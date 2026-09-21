@@ -152,6 +152,7 @@ public class PerfilServlet extends HttpServlet {
                     "flex-shrink:0;" +
                     "}"
             );
+            
 
             html.append(
                     ".logo-header {" +
@@ -789,7 +790,6 @@ public class PerfilServlet extends HttpServlet {
                     "<div class='stat-texto'>Seguindo</div>" +
                     "</div>"
             );
-
             html.append(
                     "<div>" +
                     "<div class='stat-numero'>" +
@@ -814,6 +814,13 @@ public class PerfilServlet extends HttpServlet {
 
             html.append(
                     "<div class='perfil-buttons'>"
+            );
+
+            html.append(
+                    "<a class='perfil-button' " +
+                    "href='editar-perfil'>" +
+                    "✏️ Editar perfil" +
+                    "</a>"
             );
 
             html.append(

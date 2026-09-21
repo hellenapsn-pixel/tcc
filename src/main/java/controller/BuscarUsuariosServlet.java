@@ -103,7 +103,7 @@ public class BuscarUsuariosServlet extends HttpServlet {
                             "LOWER(COALESCE(username,'')) LIKE LOWER(?) " +
                             "OR " +
                             "LOWER(COALESCE(nome,'')) LIKE LOWER(?) " +
-                            "ORDER BY nome COLLATE NOCASE";
+                            "ORDER BY nome";
 
                     stmt =
                             conexao.prepareStatement(sql);
