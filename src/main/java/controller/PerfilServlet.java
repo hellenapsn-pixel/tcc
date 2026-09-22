@@ -668,7 +668,7 @@ public class PerfilServlet extends HttpServlet {
             );
 
             html.append(
-                    "<a href='buscar-usuarios.html'>" +
+                    "<a href='buscar-usuarios'>" +
                     "Buscar usuários" +
                     "</a>"
             );
@@ -832,7 +832,7 @@ public class PerfilServlet extends HttpServlet {
 
             html.append(
                     "<a class='perfil-button' " +
-                    "href='buscar-usuarios.html'>" +
+                    "href='buscar-usuarios'>" +
                     "Buscar usuários" +
                     "</a>"
             );
