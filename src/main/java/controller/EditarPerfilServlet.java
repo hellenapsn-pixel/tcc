@@ -9,13 +9,22 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
+
+import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 
 @WebServlet("/editar-perfil")
+@MultipartConfig(maxFileSize = 5 * 1024 * 1024)
 public class EditarPerfilServlet extends HttpServlet {
 
     // =========================================================
@@ -84,6 +93,38 @@ public class EditarPerfilServlet extends HttpServlet {
         );
 
         html.append("<style>");
+
+        html.append(
+                ".logo-area {" +
+                "display:flex;" +
+                "align-items:center;" +
+                "gap:9px;" +
+                "flex-shrink:0;" +
+                "}"
+        );
+
+        html.append(
+                ".logo-header {" +
+                "width:40px !important;" +
+                "height:40px !important;" +
+                "max-width:40px !important;" +
+                "max-height:40px !important;" +
+                "object-fit:contain !important;" +
+                "display:block !important;" +
+                "flex-shrink:0;" +
+                "}"
+        );
+
+        html.append(
+                ".logo-area h1 {" +
+                "margin:0;" +
+                "padding:0;" +
+                "font-size:30px;" +
+                "font-weight:bold;" +
+                "line-height:1;" +
+                "color:#fff;" +
+                "}"
+        );
 
         html.append(
                 ".editar-container {" +
@@ -223,7 +264,7 @@ public class EditarPerfilServlet extends HttpServlet {
         html.append("<nav>");
 
         html.append(
-                "<a href='home'>Início</a>"
+                "<a href='index.html'>Início</a>"
         );
 
         html.append(
@@ -256,18 +297,35 @@ public class EditarPerfilServlet extends HttpServlet {
 
         html.append("<h2>Editar perfil</h2>");
 
+        String fotoAtualSrc;
+
+        if (foto != null && !foto.trim().isEmpty()) {
+            fotoAtualSrc =
+                    request.getContextPath() +
+                    "/foto-perfil?arquivo=" +
+                    java.net.URLEncoder.encode(
+                            foto.trim(),
+                            "UTF-8"
+                    );
+        } else {
+            fotoAtualSrc =
+                    request.getContextPath() +
+                    "/icon.png";
+        }
+
         html.append(
                 "<img " +
                 "class='foto-atual' " +
                 "src='" +
-                escaparHtml(caminhoFoto) +
+                escaparHtml(fotoAtualSrc) +
                 "' " +
                 "alt='Foto de perfil'>"
         );
 
         html.append(
                 "<form method='POST' " +
-                "action='editar-perfil'>"
+                "action='editar-perfil' " +
+                "enctype='multipart/form-data'>"
         );
 
         // NOME
@@ -425,20 +483,21 @@ public class EditarPerfilServlet extends HttpServlet {
         );
 
         html.append(
-                "<label for='foto'>" +
-                "URL da foto" +
-                "</label>"
+                "<label for='foto'>Foto de perfil</label>"
         );
 
         html.append(
                 "<input " +
-                "type='url' " +
+                "type='file' " +
                 "id='foto' " +
                 "name='foto' " +
-                "placeholder='https://...' " +
-                "value='" +
-                escaparHtml(valor(usuario.getFoto())) +
-                "'>"
+                "accept='image/png,image/jpeg,image/webp,image/gif'>"
+        );
+
+        html.append(
+                "<small style='display:block;margin-top:7px;color:#999;'>" +
+                "Escolha uma imagem do seu computador (máx. 5 MB)." +
+                "</small>"
         );
 
         html.append("</div>");
@@ -571,9 +630,69 @@ public class EditarPerfilServlet extends HttpServlet {
                     );
 
             String foto =
-                    valor(
-                            request.getParameter("foto")
+                    valor(usuario.getFoto());
+
+            Part parteFoto =
+                    request.getPart("foto");
+
+            if (parteFoto != null &&
+                    parteFoto.getSize() > 0) {
+
+                String nomeOriginal =
+                        parteFoto.getSubmittedFileName();
+
+                String extensao =
+                        "";
+
+                if (nomeOriginal != null) {
+                    int ponto = nomeOriginal.lastIndexOf('.');
+                    if (ponto >= 0) {
+                        extensao = nomeOriginal.substring(ponto).toLowerCase();
+                    }
+                }
+
+                if (!extensao.equals(".jpg") &&
+                        !extensao.equals(".jpeg") &&
+                        !extensao.equals(".png") &&
+                        !extensao.equals(".webp") &&
+                        !extensao.equals(".gif")) {
+
+                    response.sendRedirect(
+                            "editar-perfil?erro=foto"
                     );
+                    return;
+                }
+
+                String nomeArquivo =
+                        UUID.randomUUID().toString() +
+                        extensao;
+
+                String pasta =
+                        System.getProperty("java.io.tmpdir")
+                        + File.separator
+                        + "inventory-perfis";
+
+                File diretorio = new File(pasta);
+
+                if (!diretorio.exists()) {
+                    diretorio.mkdirs();
+                }
+
+                File destino =
+                        new File(diretorio, nomeArquivo);
+
+                try (InputStream entrada =
+                        parteFoto.getInputStream()) {
+
+                    Files.copy(
+                            entrada,
+                            destino.toPath(),
+                            StandardCopyOption.REPLACE_EXISTING
+                    );
+                }
+
+                foto = nomeArquivo;
+            }
 
             if (nome.isEmpty() ||
                     username.isEmpty() ||

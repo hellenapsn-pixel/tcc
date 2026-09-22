@@ -100,10 +100,10 @@ public class BuscarUsuariosServlet extends HttpServlet {
                             "foto " +
                             "FROM usuario " +
                             "WHERE " +
-                            "LOWER(COALESCE(username,'')) LIKE LOWER(?) " +
-                            "OR " +
-                            "LOWER(COALESCE(nome,'')) LIKE LOWER(?) " +
-                            "ORDER BY nome";
+                            "LOWER(REPLACE(COALESCE(username,''), '@', '')) LIKE LOWER(?) " +
+                            "OR LOWER(COALESCE(nome,'')) LIKE LOWER(?) " +
+                            "OR LOWER(COALESCE(email,'')) LIKE LOWER(?) " +
+                            "ORDER BY nome ASC";
 
                     stmt =
                             conexao.prepareStatement(sql);
@@ -118,6 +118,11 @@ public class BuscarUsuariosServlet extends HttpServlet {
 
                     stmt.setString(
                             2,
+                            termo
+                    );
+
+                    stmt.setString(
+                            3,
                             termo
                     );
 
@@ -654,25 +659,17 @@ public class BuscarUsuariosServlet extends HttpServlet {
                         String caminho =
                                 foto.trim();
 
-                        if (!caminho.startsWith("http://") &&
-                                !caminho.startsWith("https://")) {
-
-                            while (
-                                    caminho.startsWith("/")
-                            ) {
-
-                                caminho =
-                                        caminho.substring(1);
-                            }
-
-                            caminho =
-                                    request.getContextPath() +
-                                    "/foto-perfil?arquivo=" +
-                                    URLEncoder.encode(
-                                            caminho,
-                                            "UTF-8"
-                                    );
+                        while (caminho.startsWith("/")) {
+                            caminho = caminho.substring(1);
                         }
+
+                        caminho =
+                                request.getContextPath() +
+                                "/foto-perfil?arquivo=" +
+                                URLEncoder.encode(
+                                        caminho,
+                                        "UTF-8"
+                                );
 
                         html.append(
                                 "<img " +

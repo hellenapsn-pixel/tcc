@@ -1,9 +1,9 @@
 package controller;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -14,173 +14,70 @@ import javax.servlet.http.HttpServletResponse;
 @WebServlet("/foto-perfil")
 public class FotoPerfilServlet extends HttpServlet {
 
-    private static final String PASTA_FOTOS;
-
-    static {
-
-        String uploadsPath =
-                System.getenv("UPLOADS_PATH");
-
-        if (uploadsPath != null &&
-                !uploadsPath.trim().isEmpty()) {
-
-            PASTA_FOTOS =
-                    uploadsPath
-                    + File.separator
-                    + "perfil";
-
-        } else {
-
-            String sistema =
-                    System.getProperty("os.name")
-                            .toLowerCase();
-
-            if (sistema.contains("win")) {
-
-                PASTA_FOTOS =
-                        "C:\\GameBoxdUploads\\data\\perfil";
-
-            } else {
-
-                PASTA_FOTOS =
-                        "/app/data/perfil";
-            }
-        }
-
-        File pasta =
-                new File(PASTA_FOTOS);
-
-        if (!pasta.exists()) {
-            pasta.mkdirs();
-        }
-
-        System.out.println(
-                "================================="
-        );
-
-        System.out.println(
-                "PASTA DAS FOTOS:"
-        );
-
-        System.out.println(
-                PASTA_FOTOS
-        );
-
-        System.out.println(
-                "================================="
-        );
-    }
-
     @Override
     protected void doGet(
             HttpServletRequest request,
             HttpServletResponse response)
             throws ServletException, IOException {
 
-        String arquivo =
-                request.getParameter("arquivo");
+        String arquivo = request.getParameter("arquivo");
 
-        if (arquivo == null ||
-                arquivo.trim().isEmpty()) {
-
-            response.sendError(
-                    HttpServletResponse.SC_NOT_FOUND
-            );
-
+        if (arquivo == null || arquivo.trim().isEmpty()) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
 
-        /*
-         * Pega apenas o nome do arquivo.
-         * Impede que alguém passe um caminho externo.
-         */
+        arquivo = new File(arquivo).getName();
 
-        arquivo =
-                new File(arquivo)
-                        .getName();
+        String pasta =
+                System.getProperty("java.io.tmpdir")
+                + File.separator
+                + "inventory-perfis";
 
-        String nomeMinusculo =
-                arquivo.toLowerCase();
+        File foto = new File(pasta, arquivo);
 
-        /*
-         * Aceitar somente imagens.
-         */
+        // Compatibilidade com fotos antigas salvas na aplicação
+        if (!foto.exists() || !foto.isFile()) {
+            String pastaAntiga =
+                    request.getServletContext()
+                    .getRealPath("/uploads/perfis");
 
-        if (!nomeMinusculo.endsWith(".jpg")
-                && !nomeMinusculo.endsWith(".jpeg")
-                && !nomeMinusculo.endsWith(".png")
-                && !nomeMinusculo.endsWith(".webp")) {
+            if (pastaAntiga != null) {
+                foto = new File(pastaAntiga, arquivo);
+            }
+        }
 
-            response.sendError(
-                    HttpServletResponse.SC_FORBIDDEN
-            );
-
+        if (!foto.exists() || !foto.isFile()) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
 
-        File arquivoFoto =
-                new File(
-                        PASTA_FOTOS,
-                        arquivo
-                );
+        String nome = foto.getName().toLowerCase();
 
-        /*
-         * Verificar se existe.
-         */
-
-        if (!arquivoFoto.exists() ||
-                !arquivoFoto.isFile()) {
-
-            System.out.println(
-                    "FOTO NÃO ENCONTRADA:"
-            );
-
-            System.out.println(
-                    arquivoFoto.getAbsolutePath()
-            );
-
-            response.sendError(
-                    HttpServletResponse.SC_NOT_FOUND
-            );
-
+        if (nome.endsWith(".png")) {
+            response.setContentType("image/png");
+        } else if (nome.endsWith(".jpg") || nome.endsWith(".jpeg")) {
+            response.setContentType("image/jpeg");
+        } else if (nome.endsWith(".webp")) {
+            response.setContentType("image/webp");
+        } else if (nome.endsWith(".gif")) {
+            response.setContentType("image/gif");
+        } else {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
 
-        /*
-         * MIME.
-         */
+        response.setContentLengthLong(foto.length());
 
-        String tipo =
-                getServletContext()
-                        .getMimeType(
-                                arquivoFoto.getName()
-                        );
+        try (FileInputStream entrada = new FileInputStream(foto);
+             OutputStream saida = response.getOutputStream()) {
 
-        if (tipo == null) {
+            byte[] buffer = new byte[8192];
+            int lidos;
 
-            tipo =
-                    "application/octet-stream";
-        }
-
-        response.setContentType(tipo);
-
-        response.setContentLengthLong(
-                arquivoFoto.length()
-        );
-
-        /*
-         * Enviar imagem.
-         */
-
-        try (
-                OutputStream saida =
-                        response.getOutputStream()
-        ) {
-
-            Files.copy(
-                    arquivoFoto.toPath(),
-                    saida
-            );
+            while ((lidos = entrada.read(buffer)) != -1) {
+                saida.write(buffer, 0, lidos);
+            }
         }
     }
 }
