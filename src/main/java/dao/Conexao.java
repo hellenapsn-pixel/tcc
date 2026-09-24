@@ -1,4 +1,3 @@
-
 package dao;
 
 import java.io.File;
@@ -10,96 +9,52 @@ public class Conexao {
     /*
      * Pasta onde ficarão os dados permanentes
      *
-     * No Railway, vamos montar um Volume
-     * em /app/data
-     *
-     * No seu computador, será usado:
-     * C:\GameBoxdUploads\data
+     * No Railway, montamos o Volume em /app/data
+     * No Windows local: C:\GameBoxdUploads\data
      */
 
     private static final String PASTA_DADOS;
+    private static final String URL;
 
     static {
-
-        String sistema =
-                System.getProperty("os.name")
-                .toLowerCase();
+        String sistema = System.getProperty("os.name").toLowerCase();
 
         if (sistema.contains("win")) {
-
-            PASTA_DADOS =
-                    "C:\\GameBoxdUploads\\data";
-
+            PASTA_DADOS = "C:/GameBoxdUploads/data";
         } else {
-
-            PASTA_DADOS =
-                    "/app/data";
+            PASTA_DADOS = "/app/data";
         }
 
-        File diretorio =
-                new File(PASTA_DADOS);
+        File diretorio = new File(PASTA_DADOS);
 
         if (!diretorio.exists()) {
-
             diretorio.mkdirs();
         }
+
+        // O JDBC do SQLite exige barras normais "/" mesmo no Windows
+        URL = "jdbc:sqlite:" + PASTA_DADOS + "/gameboxd.db";
     }
 
     /*
-     * Banco SQLite permanente
+     * Conexão com o banco SQLite
      */
-
-    private static final String URL =
-            "jdbc:sqlite:"
-            + PASTA_DADOS
-            + File.separator
-            + "gameboxd.db";
-
     public static Connection conectar() {
-
         try {
+            Class.forName("org.sqlite.JDBC");
 
-            Class.forName(
-                    "org.sqlite.JDBC"
-            );
+            Connection conexao = DriverManager.getConnection(URL);
 
-            Connection conexao =
-                    DriverManager.getConnection(
-                            URL
-                    );
-
-            System.out.println(
-                    "================================="
-            );
-
-            System.out.println(
-                    "CONEXAO COM SQLITE OK!"
-            );
-
-            System.out.println(
-                    "BANCO: " + URL
-            );
-
-            System.out.println(
-                    "================================="
-            );
+            System.out.println("=================================");
+            System.out.println("CONEXAO COM SQLITE OK!");
+            System.out.println("BANCO: " + URL);
+            System.out.println("=================================");
 
             return conexao;
 
         } catch (Exception e) {
-
-            System.out.println(
-                    "================================="
-            );
-
-            System.out.println(
-                    "ERRO AO CONECTAR COM SQLITE:"
-            );
-
-            System.out.println(
-                    "================================="
-            );
-
+            System.out.println("=================================");
+            System.out.println("ERRO AO CONECTAR COM SQLITE:");
+            System.out.println("=================================");
             e.printStackTrace();
 
             return null;
@@ -107,8 +62,6 @@ public class Conexao {
     }
 
     public static String getPastaDados() {
-
         return PASTA_DADOS;
     }
 }
-
