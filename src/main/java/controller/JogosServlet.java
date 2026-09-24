@@ -26,6 +26,11 @@ public class JogosServlet extends HttpServlet {
             HttpServletResponse response)
             throws ServletException, IOException {
 
+        System.out.println("=================================");
+        System.out.println("JOGOS SERVLET FOI CHAMADO");
+        System.out.println("URL: " + request.getRequestURI());
+        System.out.println("=================================");
+
         response.setContentType(
                 "text/html;charset=UTF-8"
         );
@@ -43,6 +48,10 @@ public class JogosServlet extends HttpServlet {
 
         generoFiltro =
                 generoFiltro.trim();
+
+        System.out.println(
+                "FILTRO DE GENERO: [" + generoFiltro + "]"
+        );
 
         // =====================================================
         // USUARIO LOGADO
@@ -65,10 +74,27 @@ public class JogosServlet extends HttpServlet {
                 idUsuario =
                         usuario.getId();
 
+                System.out.println(
+                        "USUARIO LOGADO ID: "
+                        + idUsuario
+                );
+
             } catch (Exception e) {
+
+                System.out.println(
+                        "ERRO AO PEGAR USUARIO DA SESSAO"
+                );
+
+                e.printStackTrace();
 
                 idUsuario = -1;
             }
+
+        } else {
+
+            System.out.println(
+                    "NENHUM USUARIO LOGADO"
+            );
         }
 
         // =====================================================
@@ -428,24 +454,36 @@ public class JogosServlet extends HttpServlet {
 
         html.append("</style>");
 
-        
+        // =====================================================
+        // JAVASCRIPT
+        // =====================================================
+
         html.append("<script>");
-        html.append("function tentarOutraCapa(img){" +
-                "var src=img.getAttribute('src')||'';" +
-                "var match=src.match(/steam\\/apps\\/(\\d+)/);" +
-                "if(!match){img.style.display='none';return;}" +
-                "var id=match[1];" +
-                "var tentativas=parseInt(img.getAttribute('data-tentativas')||'0',10);" +
-                "var urls=[" +
-                "'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/'+id+'/library_600x900_2x.jpg'," +
-                "'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/'+id+'/library_600x900.jpg'," +
-                "'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/'+id+'/header.jpg'," +
-                "'https://cdn.akamai.steamstatic.com/steam/apps/'+id+'/library_600x900_2x.jpg'," +
-                "'https://cdn.akamai.steamstatic.com/steam/apps/'+id+'/library_600x900.jpg'," +
-                "'https://cdn.akamai.steamstatic.com/steam/apps/'+id+'/header.jpg'" +
-                "];" +
-                "if(tentativas<urls.length){img.setAttribute('data-tentativas',tentativas+1);img.src=urls[tentativas];}else{img.style.display='none';}" +
-                "}");
+
+        html.append(
+                "function tentarOutraCapa(img){"
+                + "var src=img.getAttribute('src')||'';"
+                + "var match=src.match(/steam\\\\/apps\\\\/(\\\\d+)/);"
+                + "if(!match){img.style.display='none';return;}"
+                + "var id=match[1];"
+                + "var tentativas=parseInt(img.getAttribute('data-tentativas')||'0',10);"
+                + "var urls=["
+                + "'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/'+id+'/library_600x900_2x.jpg',"
+                + "'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/'+id+'/library_600x900.jpg',"
+                + "'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/'+id+'/header.jpg',"
+                + "'https://cdn.akamai.steamstatic.com/steam/apps/'+id+'/library_600x900_2x.jpg',"
+                + "'https://cdn.akamai.steamstatic.com/steam/apps/'+id+'/library_600x900.jpg',"
+                + "'https://cdn.akamai.steamstatic.com/steam/apps/'+id+'/header.jpg'"
+                + "];"
+                + "if(tentativas<urls.length){"
+                + "img.setAttribute('data-tentativas',tentativas+1);"
+                + "img.src=urls[tentativas];"
+                + "}else{"
+                + "img.style.display='none';"
+                + "}"
+                + "}"
+        );
+
         html.append("</script>");
 
         html.append("</head>");
@@ -615,12 +653,25 @@ public class JogosServlet extends HttpServlet {
         // BANCO
         // =====================================================
 
+        System.out.println(
+                "TENTANDO CONECTAR AO SQLITE..."
+        );
+
         try {
 
             Connection conexao =
                     Conexao.conectar();
 
+            System.out.println(
+                    "CONEXAO RETORNOU: "
+                    + conexao
+            );
+
             if (conexao == null) {
+
+                System.out.println(
+                        "ERRO: CONEXAO COM SQLITE RETORNOU NULL"
+                );
 
                 html.append(
                         "<div class='nenhum-jogo'>"
@@ -629,6 +680,10 @@ public class JogosServlet extends HttpServlet {
                 );
 
             } else {
+
+                System.out.println(
+                        "CONEXAO COM SQLITE REALIZADA!"
+                );
 
                 String sql;
 
@@ -660,10 +715,22 @@ public class JogosServlet extends HttpServlet {
                             + "ORDER BY titulo";
                 }
 
+                System.out.println(
+                        "SQL DOS JOGOS:"
+                );
+
+                System.out.println(
+                        sql
+                );
+
                 PreparedStatement stmt =
                         conexao.prepareStatement(
                                 sql
                         );
+
+                System.out.println(
+                        "PREPARED STATEMENT CRIADO!"
+                );
 
                 if (!generoFiltro.isEmpty()) {
 
@@ -675,8 +742,16 @@ public class JogosServlet extends HttpServlet {
                     );
                 }
 
+                System.out.println(
+                        "EXECUTANDO SQL..."
+                );
+
                 ResultSet resultado =
                         stmt.executeQuery();
+
+                System.out.println(
+                        "SQL EXECUTADO COM SUCESSO!"
+                );
 
                 int quantidadeJogos = 0;
 
@@ -743,6 +818,12 @@ public class JogosServlet extends HttpServlet {
 
                         } catch (Exception erroFavorito) {
 
+                            System.out.println(
+                                    "ERRO AO VERIFICAR FAVORITO:"
+                            );
+
+                            erroFavorito.printStackTrace();
+
                             favorito = false;
                         }
                     }
@@ -771,46 +852,32 @@ public class JogosServlet extends HttpServlet {
                             + "/capa?id="
                             + id;
 
-                    if (caminhoCapa != null) {
+                    html.append(
+                            "<img "
+                            + "class='capa-jogo' "
+                            + "src='"
+                            + escapar(caminhoCapa)
+                            + "' "
+                            + "alt='Capa de "
+                            + escapar(titulo)
+                            + "' "
+                            + "onerror=\""
+                            + "this.style.display='none';"
+                            + "this.nextElementSibling"
+                            + ".style.display='flex';"
+                            + "\""
+                            + ">"
+                    );
 
-                        html.append(
-                                "<img "
-                                + "class='capa-jogo' "
-                                + "src='"
-                                + escapar(caminhoCapa)
-                                + "' "
-                                + "alt='Capa de "
-                                + escapar(titulo)
-                                + "' "
-                                + "onerror=\""
-                                + "this.style.display='none';"
-                                + "this.nextElementSibling"
-                                + ".style.display='flex';"
-                                + "\""
-                                + ">"
-                        );
-
-                        html.append(
-                                "<div "
-                                + "class='sem-capa' "
-                                + "style='display:none;'>"
-                                + "<span>"
-                                + escapar(titulo)
-                                + "</span>"
-                                + "</div>"
-                        );
-
-                    } else {
-
-                        html.append(
-                                "<div "
-                                + "class='sem-capa'>"
-                                + "<span>"
-                                + escapar(titulo)
-                                + "</span>"
-                                + "</div>"
-                        );
-                    }
+                    html.append(
+                            "<div "
+                            + "class='sem-capa' "
+                            + "style='display:none;'>"
+                            + "<span>"
+                            + escapar(titulo)
+                            + "</span>"
+                            + "</div>"
+                    );
 
                     // =================================================
                     // TITULO
@@ -952,6 +1019,11 @@ public class JogosServlet extends HttpServlet {
                     );
                 }
 
+                System.out.println(
+                        "QUANTIDADE DE JOGOS: "
+                        + quantidadeJogos
+                );
+
                 if (quantidadeJogos == 0) {
 
                     html.append(
@@ -965,9 +1037,25 @@ public class JogosServlet extends HttpServlet {
                 resultado.close();
                 stmt.close();
                 conexao.close();
+
+                System.out.println(
+                        "CONEXAO COM SQLITE FECHADA."
+                );
             }
 
         } catch (Exception e) {
+
+            System.out.println(
+                    "================================="
+            );
+
+            System.out.println(
+                    "ERRO NO JOGOSSERVLET"
+            );
+
+            System.out.println(
+                    "================================="
+            );
 
             e.printStackTrace();
 
@@ -997,6 +1085,14 @@ public class JogosServlet extends HttpServlet {
 
         response.getWriter().println(
                 html.toString()
+        );
+
+        System.out.println(
+                "JOGOS SERVLET FINALIZADO"
+        );
+
+        System.out.println(
+                "================================="
         );
     }
 
@@ -1044,7 +1140,8 @@ public class JogosServlet extends HttpServlet {
         if (caminho.matches("\\d+")) {
 
             return
-                    "https://shared.cloudflare.steamstatic.com/" + "store_item_assets/steam/apps/"
+                    "https://shared.cloudflare.steamstatic.com/"
+                    + "store_item_assets/steam/apps/"
                     + caminho
                     + "/library_600x900_2x.jpg";
         }
@@ -1069,7 +1166,8 @@ public class JogosServlet extends HttpServlet {
                     matcher.group(1);
 
             return
-                    "https://shared.cloudflare.steamstatic.com/" + "store_item_assets/steam/apps/"
+                    "https://shared.cloudflare.steamstatic.com/"
+                    + "store_item_assets/steam/apps/"
                     + appId
                     + "/library_600x900_2x.jpg";
         }
