@@ -7,9 +7,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -31,9 +28,7 @@ public class JogosServlet extends HttpServlet {
         System.out.println("URL: " + request.getRequestURI());
         System.out.println("=================================");
 
-        response.setContentType(
-                "text/html;charset=UTF-8"
-        );
+        response.setContentType("text/html;charset=UTF-8");
 
         // =====================================================
         // FILTRO
@@ -46,8 +41,7 @@ public class JogosServlet extends HttpServlet {
             generoFiltro = "";
         }
 
-        generoFiltro =
-                generoFiltro.trim();
+        generoFiltro = generoFiltro.trim();
 
         System.out.println(
                 "FILTRO DE GENERO: [" + generoFiltro + "]"
@@ -71,8 +65,7 @@ public class JogosServlet extends HttpServlet {
                         (model.Usuario)
                         sessao.getAttribute("usuario");
 
-                idUsuario =
-                        usuario.getId();
+                idUsuario = usuario.getId();
 
                 System.out.println(
                         "USUARIO LOGADO ID: "
@@ -203,10 +196,6 @@ public class JogosServlet extends HttpServlet {
                 + "}"
         );
 
-        // =====================================================
-        // GRID
-        // =====================================================
-
         html.append(
                 ".catalogo-jogos{"
                 + "display:grid;"
@@ -215,10 +204,6 @@ public class JogosServlet extends HttpServlet {
                 + "gap:28px;"
                 + "}"
         );
-
-        // =====================================================
-        // CARD
-        // =====================================================
 
         html.append(
                 ".card-jogo{"
@@ -246,10 +231,6 @@ public class JogosServlet extends HttpServlet {
                 + "0 15px 35px rgba(124,58,237,.35);"
                 + "}"
         );
-
-        // =====================================================
-        // CAPA
-        // =====================================================
 
         html.append(
                 ".capa-jogo{"
@@ -284,17 +265,6 @@ public class JogosServlet extends HttpServlet {
         );
 
         html.append(
-                ".sem-capa span{"
-                + "max-width:180px;"
-                + "line-height:1.4;"
-                + "}"
-        );
-
-        // =====================================================
-        // TITULO
-        // =====================================================
-
-        html.append(
                 ".card-jogo h3{"
                 + "font-size:18px;"
                 + "margin:15px 5px 8px;"
@@ -302,10 +272,6 @@ public class JogosServlet extends HttpServlet {
                 + "min-height:44px;"
                 + "}"
         );
-
-        // =====================================================
-        // INFORMACOES
-        // =====================================================
 
         html.append(
                 ".info-jogo{"
@@ -327,10 +293,6 @@ public class JogosServlet extends HttpServlet {
                 + "font-size:12px;"
                 + "}"
         );
-
-        // =====================================================
-        // FAVORITO
-        // =====================================================
 
         html.append(
                 ".botao-favorito{"
@@ -365,10 +327,6 @@ public class JogosServlet extends HttpServlet {
                 + "}"
         );
 
-        // =====================================================
-        // BIBLIOTECA
-        // =====================================================
-
         html.append(
                 ".botao-biblioteca{"
                 + "display:block;"
@@ -392,10 +350,6 @@ public class JogosServlet extends HttpServlet {
                 + "}"
         );
 
-        // =====================================================
-        // BRILHO
-        // =====================================================
-
         html.append(
                 ".brilho-card{"
                 + "position:absolute;"
@@ -410,10 +364,6 @@ public class JogosServlet extends HttpServlet {
                 + "}"
         );
 
-        // =====================================================
-        // NENHUM JOGO
-        // =====================================================
-
         html.append(
                 ".nenhum-jogo{"
                 + "grid-column:1/-1;"
@@ -425,10 +375,6 @@ public class JogosServlet extends HttpServlet {
                 + "color:#aaa;"
                 + "}"
         );
-
-        // =====================================================
-        // RESPONSIVO
-        // =====================================================
 
         html.append(
                 "@media(max-width:600px){"
@@ -454,39 +400,8 @@ public class JogosServlet extends HttpServlet {
 
         html.append("</style>");
 
-        // =====================================================
-        // JAVASCRIPT
-        // =====================================================
-
-        html.append("<script>");
-
-        html.append(
-                "function tentarOutraCapa(img){"
-                + "var src=img.getAttribute('src')||'';"
-                + "var match=src.match(/steam\\\\/apps\\\\/(\\\\d+)/);"
-                + "if(!match){img.style.display='none';return;}"
-                + "var id=match[1];"
-                + "var tentativas=parseInt(img.getAttribute('data-tentativas')||'0',10);"
-                + "var urls=["
-                + "'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/'+id+'/library_600x900_2x.jpg',"
-                + "'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/'+id+'/library_600x900.jpg',"
-                + "'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/'+id+'/header.jpg',"
-                + "'https://cdn.akamai.steamstatic.com/steam/apps/'+id+'/library_600x900_2x.jpg',"
-                + "'https://cdn.akamai.steamstatic.com/steam/apps/'+id+'/library_600x900.jpg',"
-                + "'https://cdn.akamai.steamstatic.com/steam/apps/'+id+'/header.jpg'"
-                + "];"
-                + "if(tentativas<urls.length){"
-                + "img.setAttribute('data-tentativas',tentativas+1);"
-                + "img.src=urls[tentativas];"
-                + "}else{"
-                + "img.style.display='none';"
-                + "}"
-                + "}"
-        );
-
-        html.append("</script>");
-
         html.append("</head>");
+
         html.append("<body>");
 
         // =====================================================
@@ -520,9 +435,7 @@ public class JogosServlet extends HttpServlet {
         );
 
         html.append(
-                "<a href='listas'>"
-                + "Listas"
-                + "</a>"
+                "<a href='listas'>Listas</a>"
         );
 
         html.append(
@@ -534,6 +447,7 @@ public class JogosServlet extends HttpServlet {
         );
 
         html.append("</nav>");
+
         html.append("</header>");
 
         // =====================================================
@@ -650,7 +564,7 @@ public class JogosServlet extends HttpServlet {
         );
 
         // =====================================================
-        // BANCO
+        // SQLITE
         // =====================================================
 
         System.out.println(
@@ -670,7 +584,7 @@ public class JogosServlet extends HttpServlet {
             if (conexao == null) {
 
                 System.out.println(
-                        "ERRO: CONEXAO COM SQLITE RETORNOU NULL"
+                        "ERRO: CONEXAO RETORNOU NULL"
                 );
 
                 html.append(
@@ -684,6 +598,10 @@ public class JogosServlet extends HttpServlet {
                 System.out.println(
                         "CONEXAO COM SQLITE REALIZADA!"
                 );
+
+                // =================================================
+                // SQL
+                // =================================================
 
                 String sql;
 
@@ -719,14 +637,10 @@ public class JogosServlet extends HttpServlet {
                         "SQL DOS JOGOS:"
                 );
 
-                System.out.println(
-                        sql
-                );
+                System.out.println(sql);
 
                 PreparedStatement stmt =
-                        conexao.prepareStatement(
-                                sql
-                        );
+                        conexao.prepareStatement(sql);
 
                 System.out.println(
                         "PREPARED STATEMENT CRIADO!"
@@ -736,9 +650,7 @@ public class JogosServlet extends HttpServlet {
 
                     stmt.setString(
                             1,
-                            "%"
-                            + generoFiltro
-                            + "%"
+                            "%" + generoFiltro + "%"
                     );
                 }
 
@@ -755,29 +667,73 @@ public class JogosServlet extends HttpServlet {
 
                 int quantidadeJogos = 0;
 
+                // =================================================
+                // JOGOS
+                // =================================================
+
                 while (resultado.next()) {
 
                     quantidadeJogos++;
 
+                    System.out.println(
+                            "================================="
+                    );
+
+                    System.out.println(
+                            "JOGO ENCONTRADO NO BANCO"
+                    );
+
+                    // =================================================
+                    // DADOS DO JOGO
+                    // =================================================
+
                     int id =
                             resultado.getInt("id");
+
+                    System.out.println(
+                            "ID: " + id
+                    );
 
                     String titulo =
                             resultado.getString("titulo");
 
+                    System.out.println(
+                            "TITULO: " + titulo
+                    );
+
                     String genero =
                             resultado.getString("genero");
 
+                    System.out.println(
+                            "GENERO: " + genero
+                    );
+
                     String plataforma =
                             resultado.getString("plataforma");
+
+                    System.out.println(
+                            "PLATAFORMA: " + plataforma
+                    );
 
                     String ano =
                             resultado.getString(
                                     "ano_lancamento"
                             );
 
+                    System.out.println(
+                            "ANO: " + ano
+                    );
+
                     String capa =
                             resultado.getString("capa");
+
+                    System.out.println(
+                            "CAPA: " + capa
+                    );
+
+                    System.out.println(
+                            "================================="
+                    );
 
                     // =================================================
                     // FAVORITO
@@ -788,6 +744,10 @@ public class JogosServlet extends HttpServlet {
                     if (idUsuario != -1) {
 
                         try {
+
+                            System.out.println(
+                                    "VERIFICANDO FAVORITO..."
+                            );
 
                             PreparedStatement stmtFavorito =
                                     conexao.prepareStatement(
@@ -814,12 +774,18 @@ public class JogosServlet extends HttpServlet {
                                     rsFavorito.next();
 
                             rsFavorito.close();
+
                             stmtFavorito.close();
+
+                            System.out.println(
+                                    "FAVORITO VERIFICADO: "
+                                    + favorito
+                            );
 
                         } catch (Exception erroFavorito) {
 
                             System.out.println(
-                                    "ERRO AO VERIFICAR FAVORITO:"
+                                    "ERRO AO VERIFICAR FAVORITO"
                             );
 
                             erroFavorito.printStackTrace();
@@ -832,15 +798,16 @@ public class JogosServlet extends HttpServlet {
                     // CARD
                     // =================================================
 
-                    html.append(
-                            "<article "
-                            + "class='card-jogo'>"
+                    System.out.println(
+                            "MONTANDO CARD DO JOGO..."
                     );
 
                     html.append(
-                            "<div "
-                            + "class='brilho-card'>"
-                            + "</div>"
+                            "<article class='card-jogo'>"
+                    );
+
+                    html.append(
+                            "<div class='brilho-card'></div>"
                     );
 
                     // =================================================
@@ -1017,25 +984,42 @@ public class JogosServlet extends HttpServlet {
                     html.append(
                             "</article>"
                     );
+
+                    System.out.println(
+                            "CARD MONTADO COM SUCESSO!"
+                    );
                 }
+
+                // =================================================
+                // FINAL DOS JOGOS
+                // =================================================
+
+                System.out.println(
+                        "================================="
+                );
 
                 System.out.println(
                         "QUANTIDADE DE JOGOS: "
                         + quantidadeJogos
                 );
 
+                System.out.println(
+                        "================================="
+                );
+
                 if (quantidadeJogos == 0) {
 
                     html.append(
-                            "<div "
-                            + "class='nenhum-jogo'>"
+                            "<div class='nenhum-jogo'>"
                             + "Nenhum jogo encontrado."
                             + "</div>"
                     );
                 }
 
                 resultado.close();
+
                 stmt.close();
+
                 conexao.close();
 
                 System.out.println(
@@ -1060,31 +1044,30 @@ public class JogosServlet extends HttpServlet {
             e.printStackTrace();
 
             html.append(
-                    "<div "
-                    + "class='nenhum-jogo'>"
+                    "<div class='nenhum-jogo'>"
                     + "Erro ao carregar os jogos."
                     + "</div>"
             );
         }
 
-        html.append(
-                "</div>"
-        );
+        // =====================================================
+        // FINAL HTML
+        // =====================================================
 
-        html.append(
-                "</main>"
-        );
+        html.append("</div>");
 
-        html.append(
-                "</body>"
-        );
+        html.append("</main>");
 
-        html.append(
-                "</html>"
-        );
+        html.append("</body>");
+
+        html.append("</html>");
 
         response.getWriter().println(
                 html.toString()
+        );
+
+        System.out.println(
+                "================================="
         );
 
         System.out.println(
@@ -1094,111 +1077,6 @@ public class JogosServlet extends HttpServlet {
         System.out.println(
                 "================================="
         );
-    }
-
-    // =====================================================
-    // PREPARAR CAPA
-    // =====================================================
-
-    private String prepararCapa(
-            HttpServletRequest request,
-            String capa) {
-
-        if (capa == null ||
-                capa.trim().isEmpty()) {
-
-            return null;
-        }
-
-        String caminho =
-                capa.trim();
-
-        // =================================================
-        // MARKDOWN
-        // =================================================
-
-        if (caminho.startsWith("[")
-                &&
-                caminho.contains("](")
-                &&
-                caminho.endsWith(")")) {
-
-            int inicio =
-                    caminho.indexOf("](");
-
-            caminho =
-                    caminho.substring(
-                            inicio + 2,
-                            caminho.length() - 1
-                    );
-        }
-
-        // =================================================
-        // STEAM APP ID
-        // =================================================
-
-        if (caminho.matches("\\d+")) {
-
-            return
-                    "https://shared.cloudflare.steamstatic.com/"
-                    + "store_item_assets/steam/apps/"
-                    + caminho
-                    + "/library_600x900_2x.jpg";
-        }
-
-        // =================================================
-        // /apps/ID
-        // =================================================
-
-        Pattern pattern =
-                Pattern.compile(
-                        "/apps/(\\d+)"
-                );
-
-        Matcher matcher =
-                pattern.matcher(
-                        caminho
-                );
-
-        if (matcher.find()) {
-
-            String appId =
-                    matcher.group(1);
-
-            return
-                    "https://shared.cloudflare.steamstatic.com/"
-                    + "store_item_assets/steam/apps/"
-                    + appId
-                    + "/library_600x900_2x.jpg";
-        }
-
-        // =================================================
-        // URL
-        // =================================================
-
-        if (caminho.startsWith("http://")
-                ||
-                caminho.startsWith("https://")) {
-
-            return caminho;
-        }
-
-        // =================================================
-        // LOCAL
-        // =================================================
-
-        while (
-                caminho.startsWith("/")
-        ) {
-
-            caminho =
-                    caminho.substring(1);
-        }
-
-        return
-                request.getContextPath()
-                + "/"
-                + caminho;
     }
 
     // =====================================================
@@ -1213,25 +1091,10 @@ public class JogosServlet extends HttpServlet {
         }
 
         return texto
-                .replace(
-                        "&",
-                        "&amp;"
-                )
-                .replace(
-                        "<",
-                        "&lt;"
-                )
-                .replace(
-                        ">",
-                        "&gt;"
-                )
-                .replace(
-                        "\"",
-                        "&quot;"
-                )
-                .replace(
-                        "'",
-                        "&#39;"
-                );
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 }
