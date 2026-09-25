@@ -9,23 +9,18 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
-
-import java.nio.charset.StandardCharsets;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,12 +30,11 @@ public class JogosServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    /*
-     * ==========================================================
-     * 10 GÊNEROS
-     * ==========================================================
-     */
+    private static final int TOTAL_JOGOS = 500;
 
+    /*
+     * 10 gêneros
+     */
     private static final String[][] GENEROS = {
 
         {"Ação", "19"},
@@ -56,331 +50,241 @@ public class JogosServlet extends HttpServlet {
 
     };
 
-
-    /*
-     * ==========================================================
-     * QUANTIDADE DE JOGOS
-     * ==========================================================
-     */
-
-    private static final int TOTAL_JOGOS = 500;
-
-
-    /*
-     * ==========================================================
-     * INIT
-     * ==========================================================
-     */
-
     @Override
     public void init() throws ServletException {
+
+        System.out.println("=================================");
+        System.out.println("INICIANDO JOGOS SERVLET");
+        System.out.println("=================================");
 
         criarTabela();
 
         carregarJogos();
-
     }
 
-
     /*
-     * ==========================================================
-     * CRIAR TABELA
-     * ==========================================================
+     * =========================================================
+     * CRIA A TABELA
+     * =========================================================
      */
-
     private void criarTabela() {
 
-        String sql =
-            "CREATE TABLE IF NOT EXISTS jogo (" +
-            "id INTEGER PRIMARY KEY," +
-            "nome TEXT NOT NULL," +
-            "genero TEXT NOT NULL," +
-            "nota REAL DEFAULT 0," +
-            "imagem TEXT" +
-            ")";
+        String apagar = "DROP TABLE IF EXISTS jogo";
 
-        try (Connection conexao = Conexao.conectar();
-             Statement stmt = conexao.createStatement()) {
+        String criar =
+                "CREATE TABLE jogo (" +
+                "id INTEGER PRIMARY KEY, " +
+                "nome TEXT NOT NULL, " +
+                "genero TEXT NOT NULL, " +
+                "nota REAL DEFAULT 0, " +
+                "imagem TEXT" +
+                ")";
 
-            stmt.executeUpdate(sql);
+        try (
+            Connection conn = Conexao.conectar();
+            Statement stmt = conn.createStatement()
+        ) {
 
-            System.out.println("Tabela jogo criada/verificada.");
+            stmt.executeUpdate(apagar);
+
+            stmt.executeUpdate(criar);
+
+            System.out.println("=================================");
+            System.out.println("TABELA JOGO CRIADA!");
+            System.out.println("=================================");
 
         } catch (Exception e) {
 
-            System.out.println("Erro ao criar tabela jogo:");
+            System.out.println("=================================");
+            System.out.println("ERRO AO CRIAR TABELA JOGO:");
+            System.out.println("=================================");
 
             e.printStackTrace();
         }
     }
 
-
     /*
-     * ==========================================================
-     * CARREGAR 500 JOGOS DA STEAM
-     * ==========================================================
+     * =========================================================
+     * CARREGA OS JOGOS DA STEAM
+     * =========================================================
      */
-
     private void carregarJogos() {
 
-        try {
+        System.out.println("=================================");
+        System.out.println("CARREGANDO JOGOS DA STEAM...");
+        System.out.println("=================================");
 
-            Connection conexao = Conexao.conectar();
-
-            if (conexao == null) {
-                return;
-            }
-
-
-            /*
-             * Se já tiver 500 jogos, não busca novamente.
-             */
-
-            String verificar =
-                "SELECT COUNT(*) AS total FROM jogo";
-
-            PreparedStatement psVerificar =
-                conexao.prepareStatement(verificar);
-
-            ResultSet rs =
-                psVerificar.executeQuery();
-
-            int totalBanco = 0;
-
-            if (rs.next()) {
-                totalBanco = rs.getInt("total");
-            }
-
-            rs.close();
-            psVerificar.close();
-
-
-            if (totalBanco >= TOTAL_JOGOS) {
-
-                System.out.println(
-                    "Banco já possui " +
-                    totalBanco +
-                    " jogos."
-                );
-
-                conexao.close();
-
-                return;
-            }
-
-
-            /*
-             * Limpa os jogos antigos para montar
-             * novamente o catálogo.
-             */
-
-            Statement limpar =
-                conexao.createStatement();
-
-            limpar.executeUpdate(
-                "DELETE FROM jogo"
-            );
-
-            limpar.close();
-
-
-            Set<Integer> idsAdicionados =
+        Set<Integer> idsAdicionados =
                 new HashSet<Integer>();
 
+        int total = 0;
 
-            /*
-             * Busca jogos dos 10 gêneros.
-             */
+        for (String[] genero : GENEROS) {
 
-            for (String[] genero : GENEROS) {
-
-                String nomeGenero =
-                    genero[0];
-
-                String tag =
-                    genero[1];
-
-
-                /*
-                 * Até 3 páginas de 50 jogos.
-                 */
-
-                for (int pagina = 0; pagina < 3; pagina++) {
-
-                    if (idsAdicionados.size() >= TOTAL_JOGOS) {
-                        break;
-                    }
-
-
-                    int inicio =
-                        pagina * 50;
-
-
-                    String url =
-                        "https://store.steampowered.com/search/results/"
-                        + "?json=1"
-                        + "&category1=998"
-                        + "&tags=" + tag
-                        + "&start=" + inicio
-                        + "&count=50"
-                        + "&supportedlang=portuguese";
-
-
-                    System.out.println(
-                        "Buscando: " +
-                        nomeGenero +
-                        " | página " +
-                        pagina
-                    );
-
-
-                    String resposta =
-                        baixar(url);
-
-
-                    if (resposta == null ||
-                        resposta.trim().isEmpty()) {
-
-                        continue;
-                    }
-
-
-                    adicionarJogosDaSteam(
-                        resposta,
-                        nomeGenero,
-                        conexao,
-                        idsAdicionados
-                    );
-                }
+            if (total >= TOTAL_JOGOS) {
+                break;
             }
 
-
-            conexao.close();
-
-
-            System.out.println(
-                "================================="
-            );
+            String nomeGenero = genero[0];
+            String tag = genero[1];
 
             System.out.println(
-                "JOGOS CARREGADOS: " +
-                idsAdicionados.size()
+                    "Buscando gênero: " + nomeGenero
             );
 
-            System.out.println(
-                "================================="
-            );
+            /*
+             * 5 páginas de 50 jogos.
+             */
+            for (int pagina = 0; pagina < 5; pagina++) {
 
+                if (total >= TOTAL_JOGOS) {
+                    break;
+                }
 
-        } catch (Exception e) {
+                int inicio = pagina * 50;
 
-            System.out.println(
-                "Erro ao carregar jogos da Steam:"
-            );
+                String resposta =
+                        buscarSteam(tag, inicio);
 
-            e.printStackTrace();
+                if (resposta == null ||
+                        resposta.isEmpty()) {
+
+                    System.out.println(
+                            "Steam não retornou dados para "
+                            + nomeGenero
+                    );
+
+                    break;
+                }
+
+                int adicionados =
+                        processarJogos(
+                                resposta,
+                                nomeGenero,
+                                idsAdicionados,
+                                TOTAL_JOGOS - total
+                        );
+
+                total += adicionados;
+
+                System.out.println(
+                        "Total carregado: "
+                        + total
+                        + "/"
+                        + TOTAL_JOGOS
+                );
+
+                if (adicionados == 0) {
+                    break;
+                }
+            }
         }
+
+        System.out.println("=================================");
+        System.out.println(
+                "TOTAL DE JOGOS CARREGADOS: " + total
+        );
+        System.out.println("=================================");
     }
 
-
     /*
-     * ==========================================================
-     * BAIXAR JSON DA STEAM
-     * ==========================================================
+     * =========================================================
+     * BUSCA NA STEAM
+     * =========================================================
      */
-
-    private String baixar(String endereco) {
+    private String buscarSteam(
+            String tag,
+            int inicio
+    ) {
 
         HttpURLConnection conexao = null;
 
-        BufferedReader leitor = null;
-
         try {
 
-            URL url =
-                new URL(endereco);
+            String endereco =
+                    "https://store.steampowered.com/search/results/"
+                    + "?json=1"
+                    + "&category1=998"
+                    + "&tags=" + tag
+                    + "&start=" + inicio
+                    + "&count=50"
+                    + "&supportedlang=english";
+
+            System.out.println(
+                    "Steam URL: " + endereco
+            );
+
+            URL url = new URL(endereco);
 
             conexao =
-                (HttpURLConnection) url.openConnection();
+                    (HttpURLConnection)
+                    url.openConnection();
 
             conexao.setRequestMethod("GET");
 
             conexao.setConnectTimeout(15000);
 
-            conexao.setReadTimeout(15000);
+            conexao.setReadTimeout(20000);
 
             conexao.setRequestProperty(
-                "User-Agent",
-                "Mozilla/5.0"
+                    "User-Agent",
+                    "Mozilla/5.0"
             );
 
             conexao.setRequestProperty(
-                "Accept",
-                "application/json"
+                    "Accept",
+                    "application/json,text/plain,*/*"
             );
 
+            int status =
+                    conexao.getResponseCode();
 
-            int codigo =
-                conexao.getResponseCode();
-
-
-            if (codigo != 200) {
+            if (status != 200) {
 
                 System.out.println(
-                    "Steam respondeu HTTP " +
-                    codigo
+                        "Steam retornou HTTP "
+                        + status
                 );
 
-                return null;
+                return "";
             }
 
-
-            leitor =
-                new BufferedReader(
-                    new InputStreamReader(
-                        conexao.getInputStream(),
-                        StandardCharsets.UTF_8
-                    )
-                );
-
+            BufferedReader leitor =
+                    new BufferedReader(
+                            new InputStreamReader(
+                                    conexao.getInputStream(),
+                                    "UTF-8"
+                            )
+                    );
 
             StringBuilder resposta =
-                new StringBuilder();
+                    new StringBuilder();
 
             String linha;
 
-
-            while ((linha = leitor.readLine()) != null) {
+            while (
+                    (linha = leitor.readLine())
+                    != null
+            ) {
 
                 resposta.append(linha);
             }
 
+            leitor.close();
 
             return resposta.toString();
-
 
         } catch (Exception e) {
 
             System.out.println(
-                "Erro ao acessar Steam:"
+                    "Erro ao consultar Steam:"
             );
 
             e.printStackTrace();
 
-            return null;
-
+            return "";
 
         } finally {
-
-            try {
-
-                if (leitor != null) {
-                    leitor.close();
-                }
-
-            } catch (Exception ignored) {
-            }
-
 
             if (conexao != null) {
                 conexao.disconnect();
@@ -388,636 +292,522 @@ public class JogosServlet extends HttpServlet {
         }
     }
 
-
     /*
-     * ==========================================================
-     * LER JOGOS DO JSON
-     * ==========================================================
+     * =========================================================
+     * PROCESSA O JSON DA STEAM
+     * =========================================================
      */
-
-    private void adicionarJogosDaSteam(
+    private int processarJogos(
             String json,
             String genero,
-            Connection conexao,
-            Set<Integer> idsAdicionados) {
+            Set<Integer> idsAdicionados,
+            int limite
+    ) {
 
+        int quantidade = 0;
 
-        /*
-         * A Steam retorna:
-         *
-         * id
-         * type
-         * name
-         *
-         * O padrão abaixo pega esses dados.
-         */
-
-        Pattern padrao =
-            Pattern.compile(
-                "\"id\"\\s*:\\s*(\\d+).*?" +
-                "\"name\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"",
+        Pattern padrao = Pattern.compile(
+                "\"id\"\\s*:\\s*(\\d+).*?"
+                + "\"name\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"",
                 Pattern.DOTALL
-            );
-
+        );
 
         Matcher matcher =
-            padrao.matcher(json);
+                padrao.matcher(json);
 
-
-        while (matcher.find()) {
-
-
-            if (idsAdicionados.size() >= TOTAL_JOGOS) {
-                break;
-            }
-
+        while (
+                matcher.find()
+                && quantidade < limite
+        ) {
 
             try {
 
                 int id =
-                    Integer.parseInt(
-                        matcher.group(1)
-                    );
-
+                        Integer.parseInt(
+                                matcher.group(1)
+                        );
 
                 String nome =
-                    matcher.group(2);
-
+                        matcher.group(2);
 
                 nome =
-                    limparTexto(nome);
+                        limparTextoJSON(nome);
 
-
-                if (nome == null ||
-                    nome.trim().isEmpty()) {
-
-                    continue;
-                }
-
+                String nomeMinusculo =
+                        nome.toLowerCase();
 
                 /*
-                 * Evita duplicados.
+                 * Ignora resultados que não são jogos.
                  */
-
-                if (idsAdicionados.contains(id)) {
-                    continue;
-                }
-
-
-                /*
-                 * Ignora alguns tipos de conteúdo
-                 * que não queremos no catálogo.
-                 */
-
-                String nomeLower =
-                    nome.toLowerCase();
-
-
                 if (
-                    nomeLower.contains("soundtrack") ||
-                    nomeLower.contains("ost") ||
-                    nomeLower.contains("demo") ||
-                    nomeLower.contains("playtest")
+                    nomeMinusculo.contains("soundtrack")
+                    || nomeMinusculo.contains("ost")
+                    || nomeMinusculo.contains("demo")
+                    || nomeMinusculo.contains("playtest")
+                    || nomeMinusculo.contains("server")
+                    || nomeMinusculo.contains("tool")
                 ) {
 
                     continue;
                 }
 
-
                 /*
-                 * URL da capa.
-                 *
-                 * A Steam utiliza cápsulas de biblioteca
-                 * verticais de 600x900.
+                 * Evita jogos repetidos.
                  */
+                if (idsAdicionados.contains(id)) {
+                    continue;
+                }
 
-                String imagem =
-                    "https://cdn.cloudflare.steamstatic.com/steam/apps/"
-                    + id
-                    + "/library_600x900.jpg";
+                boolean inserido =
+                        inserirJogo(
+                                id,
+                                nome,
+                                genero
+                        );
 
+                if (inserido) {
 
-                /*
-                 * Nota inicial.
-                 */
+                    idsAdicionados.add(id);
 
-                double nota =
-                    gerarNota(id);
-
-
-                inserirJogo(
-                    conexao,
-                    id,
-                    nome,
-                    genero,
-                    nota,
-                    imagem
-                );
-
-
-                idsAdicionados.add(id);
-
+                    quantidade++;
+                }
 
             } catch (Exception e) {
 
                 System.out.println(
-                    "Erro ao adicionar jogo:"
+                        "Erro processando jogo:"
                 );
 
                 e.printStackTrace();
             }
         }
+
+        return quantidade;
     }
 
-
     /*
-     * ==========================================================
-     * LIMPAR TEXTO
-     * ==========================================================
+     * =========================================================
+     * INSERE JOGO NO SQLITE
+     * =========================================================
      */
-
-    private String limparTexto(String texto) {
-
-        if (texto == null) {
-            return "";
-        }
-
-
-        return texto
-            .replace("\\\"", "\"")
-            .replace("\\\\", "\\")
-            .replace("\\/", "/")
-            .replace("\\n", " ")
-            .replace("\\r", " ")
-            .replace("&amp;", "&")
-            .trim();
-    }
-
-
-    /*
-     * ==========================================================
-     * INSERIR JOGO
-     * ==========================================================
-     */
-
-    private void inserirJogo(
-            Connection conexao,
+    private boolean inserirJogo(
             int id,
             String nome,
-            String genero,
-            double nota,
-            String imagem) {
-
+            String genero
+    ) {
 
         String sql =
-            "INSERT OR IGNORE INTO jogo " +
-            "(id, nome, genero, nota, imagem) " +
-            "VALUES (?, ?, ?, ?, ?)";
+                "INSERT INTO jogo "
+                + "(id, nome, genero, nota, imagem) "
+                + "VALUES (?, ?, ?, ?, ?)";
 
+        String imagem =
+                "https://cdn.cloudflare.steamstatic.com/"
+                + "steam/apps/"
+                + id
+                + "/library_600x900.jpg";
 
-        try (PreparedStatement ps =
-                conexao.prepareStatement(sql)) {
+        try (
+            Connection conn = Conexao.conectar();
+            PreparedStatement stmt =
+                    conn.prepareStatement(sql)
+        ) {
 
+            stmt.setInt(1, id);
 
-            ps.setInt(1, id);
+            stmt.setString(2, nome);
 
-            ps.setString(2, nome);
+            stmt.setString(3, genero);
 
-            ps.setString(3, genero);
+            stmt.setDouble(4, 0);
 
-            ps.setDouble(4, nota);
+            stmt.setString(5, imagem);
 
-            ps.setString(5, imagem);
+            stmt.executeUpdate();
 
-
-            ps.executeUpdate();
-
+            return true;
 
         } catch (Exception e) {
 
             System.out.println(
-                "Erro ao inserir jogo: " +
-                nome
+                    "Erro ao inserir jogo "
+                    + id
             );
 
-            e.printStackTrace();
+            return false;
         }
     }
 
-
     /*
-     * ==========================================================
-     * NOTA
-     * ==========================================================
-     *
-     * Apenas uma nota visual inicial.
-     *
-     * Depois podemos ligar isso às avaliações
-     * dos usuários.
-     */
-
-    private double gerarNota(int id) {
-
-        int valor =
-            Math.abs(id % 11);
-
-
-        double nota =
-            4.0 +
-            (valor * 0.1);
-
-
-        if (nota > 5.0) {
-            nota = 5.0;
-        }
-
-
-        return Math.round(
-            nota * 10.0
-        ) / 10.0;
-    }
-
-
-    /*
-     * ==========================================================
+     * =========================================================
      * DO GET
-     * ==========================================================
+     * =========================================================
+     *
+     * CORRIGIDO:
+     * agora possui throws IOException
      */
-
     @Override
     protected void doGet(
             HttpServletRequest request,
-            HttpServletResponse response)
-            throws ServletException, IOException {
-
+            HttpServletResponse response
+    ) throws ServletException, IOException {
 
         response.setContentType(
-            "text/html;charset=UTF-8"
+                "text/html;charset=UTF-8"
         );
-
-
-        /*
-         * Busca digitada pelo usuário.
-         */
 
         String busca =
-            request.getParameter("busca");
-
-
-        /*
-         * Gênero selecionado.
-         */
+                request.getParameter("busca");
 
         String genero =
-            request.getParameter("genero");
+                request.getParameter("genero");
 
+        if (busca == null) {
+            busca = "";
+        }
 
-        List<Jogo> jogos =
-            buscarJogos(
-                busca,
-                genero
+        if (genero == null) {
+            genero = "";
+        }
+
+        try {
+
+            String html =
+                    gerarPagina(
+                            busca,
+                            genero
+                    );
+
+            response.getWriter().write(html);
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            response.getWriter().write(
+                    "<h1>Erro ao carregar jogos.</h1>"
             );
+        }
+    }
 
+    /*
+     * =========================================================
+     * GERA A PÁGINA
+     * =========================================================
+     */
+    private String gerarPagina(
+            String busca,
+            String genero
+    ) {
 
         StringBuilder html =
-            new StringBuilder();
+                new StringBuilder();
 
+        html.append("<!DOCTYPE html>");
+        html.append("<html lang='pt-BR'>");
 
-        html.append(
-            "<!DOCTYPE html>"
-        );
+        html.append("<head>");
 
-
-        html.append(
-            "<html lang='pt-BR'>"
-        );
-
+        html.append("<meta charset='UTF-8'>");
 
         html.append(
-            "<head>"
+                "<meta name='viewport' "
+                + "content='width=device-width, "
+                + "initial-scale=1.0'>"
         );
-
 
         html.append(
-            "<meta charset='UTF-8'>"
+                "<title>Jogos - Inventory</title>"
         );
-
-
-        html.append(
-            "<meta name='viewport' " +
-            "content='width=device-width, initial-scale=1.0'>"
-        );
-
-
-        html.append(
-            "<title>Inventory - Jogos</title>"
-        );
-
 
         /*
-         * MESMA FONTE / CSS DAS OUTRAS PÁGINAS
+         * Usa o CSS das outras páginas.
          */
-
         html.append(
-            "<link rel='stylesheet' href='style.css'>"
+                "<link rel='stylesheet' "
+                + "href='style.css'>"
         );
-
-
-        /*
-         * CSS da página.
-         */
 
         html.append("<style>");
 
         html.append(
+                "body{"
+                + "margin:0;"
+                + "background:#0d0914;"
+                + "color:#fff;"
+                + "font-family:inherit;"
+                + "}"
+        );
 
-            "html,body{" +
-            "margin:0;" +
-            "padding:0;" +
-            "min-height:100%;" +
-            "}" +
+        html.append(
+                ".container{"
+                + "width:90%;"
+                + "max-width:1055px;"
+                + "margin:auto;"
+                + "}"
+        );
 
-            "body{" +
-            "font-family:inherit;" +
-            "background:#0f0b16;" +
-            "color:white;" +
-            "}" +
+        html.append(
+                ".cabecalho{"
+                + "height:66px;"
+                + "border-bottom:1px solid #30263b;"
+                + "display:flex;"
+                + "align-items:center;"
+                + "justify-content:space-between;"
+                + "padding:0 42px;"
+                + "box-sizing:border-box;"
+                + "}"
+        );
 
-            "header{" +
-            "width:100%;" +
-            "box-sizing:border-box;" +
-            "display:flex;" +
-            "align-items:center;" +
-            "justify-content:space-between;" +
-            "padding:18px 40px;" +
-            "background:#0d0914;" +
-            "border-bottom:1px solid #30263a;" +
-            "}" +
+        html.append(
+                ".logo{"
+                + "font-size:28px;"
+                + "font-weight:bold;"
+                + "color:white;"
+                + "text-decoration:none;"
+                + "}"
+        );
 
-            ".logo-area{" +
-            "display:flex;" +
-            "align-items:center;" +
-            "gap:9px;" +
-            "}" +
+        html.append(
+                ".logo span{"
+                + "color:#a855f7;"
+                + "}"
+        );
 
-            ".logo-header{" +
-            "width:40px;" +
-            "height:40px;" +
-            "object-fit:contain;" +
-            "}" +
+        html.append(
+                ".menu{"
+                + "display:flex;"
+                + "gap:42px;"
+                + "}"
+        );
 
-            ".logo-area h1{" +
-            "margin:0;" +
-            "color:white;" +
-            "font-size:30px;" +
-            "font-weight:700;" +
-            "}" +
+        html.append(
+                ".menu a{"
+                + "color:#c9c0d4;"
+                + "text-decoration:none;"
+                + "font-size:14px;"
+                + "}"
+        );
 
-            "header nav{" +
-            "display:flex;" +
-            "align-items:center;" +
-            "gap:28px;" +
-            "}" +
+        html.append(
+                ".menu a:hover{"
+                + "color:#a855f7;"
+                + "}"
+        );
 
-            "header nav a{" +
-            "color:#b9afc5;" +
-            "text-decoration:none;" +
-            "font-size:14px;" +
-            "transition:.2s;" +
-            "}" +
+        html.append(
+                ".boas-vindas{"
+                + "margin-top:27px;"
+                + "padding:52px 20px;"
+                + "text-align:center;"
+                + "background:#17121e;"
+                + "border:1px solid #30263b;"
+                + "border-radius:16px;"
+                + "}"
+        );
 
-            "header nav a:hover{" +
-            "color:#c084fc;" +
-            "}" +
+        html.append(
+                ".boas-vindas h1{"
+                + "margin:0;"
+                + "font-size:34px;"
+                + "}"
+        );
 
-            "main{" +
-            "max-width:1200px;" +
-            "margin:auto;" +
-            "padding:30px 25px 60px;" +
-            "}" +
+        html.append(
+                ".roxo{"
+                + "color:#a855f7;"
+                + "}"
+        );
 
-            ".inicio{" +
-            "text-align:center;" +
-            "padding:55px 25px;" +
-            "margin-bottom:35px;" +
-            "background:" +
-            "radial-gradient(circle at top," +
-            "rgba(124,58,237,.28)," +
-            "transparent 65%),#17121f;" +
-            "border:1px solid #30263a;" +
-            "border-radius:18px;" +
-            "box-shadow:0 15px 40px rgba(0,0,0,.3);" +
-            "}" +
+        html.append(
+                ".boas-vindas p{"
+                + "color:#aaa0b7;"
+                + "margin-top:15px;"
+                + "}"
+        );
 
-            ".inicio h2{" +
-            "font-size:38px;" +
-            "margin-bottom:12px;" +
-            "color:white;" +
-            "}" +
+        html.append(
+                ".busca-box{"
+                + "margin-top:32px;"
+                + "padding:28px 24px;"
+                + "background:#17121e;"
+                + "border:1px solid #30263b;"
+                + "border-radius:16px;"
+                + "}"
+        );
 
-            ".inicio h2 span{" +
-            "color:#a855f7;" +
-            "}" +
+        html.append(
+                ".busca-box h2{"
+                + "margin-top:0;"
+                + "}"
+        );
 
-            ".inicio p{" +
-            "font-size:16px;" +
-            "max-width:650px;" +
-            "margin:auto;" +
-            "color:#aaa1b4;" +
-            "}" +
+        html.append(
+                ".campo{"
+                + "width:100%;"
+                + "box-sizing:border-box;"
+                + "background:#0d0914;"
+                + "border:1px solid #9d4edd;"
+                + "border-radius:8px;"
+                + "padding:12px;"
+                + "color:white;"
+                + "margin-bottom:10px;"
+                + "outline:none;"
+                + "}"
+        );
 
-            ".busca{" +
-            "background:#17131d;" +
-            "border:1px solid #30263a;" +
-            "border-radius:14px;" +
-            "padding:25px;" +
-            "margin-bottom:40px;" +
-            "}" +
+        html.append(
+                ".botao{"
+                + "background:#9d4edd;"
+                + "border:0;"
+                + "border-radius:8px;"
+                + "padding:12px 24px;"
+                + "color:white;"
+                + "font-weight:bold;"
+                + "cursor:pointer;"
+                + "}"
+        );
 
-            ".busca h2{" +
-            "color:white;" +
-            "margin-bottom:15px;" +
-            "}" +
+        html.append(
+                ".botao:hover{"
+                + "background:#b56cff;"
+                + "}"
+        );
 
-            ".busca-form{" +
-            "display:flex;" +
-            "gap:10px;" +
-            "flex-wrap:wrap;" +
-            "}" +
+        html.append(
+                ".titulo-jogos{"
+                + "margin-top:40px;"
+                + "}"
+        );
 
-            ".busca-form input," +
-            ".busca-form select{" +
-            "box-sizing:border-box;" +
-            "padding:13px 15px;" +
-            "background:#0f0b16;" +
-            "border:1px solid #7c3aed;" +
-            "border-radius:8px;" +
-            "color:white;" +
-            "outline:none;" +
-            "}" +
+        html.append(
+                ".titulo-jogos p{"
+                + "color:#aaa0b7;"
+                + "}"
+        );
 
-            ".busca-form input{" +
-            "flex:1;" +
-            "min-width:220px;" +
-            "}" +
+        html.append(
+                ".grid{"
+                + "display:grid;"
+                + "grid-template-columns:"
+                + "repeat(5,1fr);"
+                + "gap:18px;"
+                + "margin-top:25px;"
+                + "}"
+        );
 
-            ".busca-form select{" +
-            "min-width:180px;" +
-            "cursor:pointer;" +
-            "}" +
+        html.append(
+                ".card{"
+                + "background:#17121e;"
+                + "border:1px solid #30263b;"
+                + "border-radius:12px;"
+                + "overflow:hidden;"
+                + "transition:.2s;"
+                + "}"
+        );
 
-            ".busca-form button{" +
-            "padding:12px 25px;" +
-            "border:none;" +
-            "border-radius:8px;" +
-            "background:linear-gradient(135deg,#7c3aed,#a855f7);" +
-            "color:white;" +
-            "font-weight:bold;" +
-            "cursor:pointer;" +
-            "transition:.2s;" +
-            "}" +
+        html.append(
+                ".card:hover{"
+                + "transform:translateY(-4px);"
+                + "border-color:#9d4edd;"
+                + "}"
+        );
 
-            ".busca-form button:hover{" +
-            "transform:translateY(-2px);" +
-            "}" +
+        html.append(
+                ".capa{"
+                + "width:100%;"
+                + "height:270px;"
+                + "object-fit:cover;"
+                + "display:block;"
+                + "background:#201827;"
+                + "}"
+        );
 
-            ".titulo-catalogo{" +
-            "margin-bottom:20px;" +
-            "}" +
+        html.append(
+                ".card-info{"
+                + "padding:14px;"
+                + "}"
+        );
 
-            ".titulo-catalogo h2{" +
-            "margin-bottom:5px;" +
-            "color:white;" +
-            "}" +
+        html.append(
+                ".card-info h3{"
+                + "font-size:16px;"
+                + "margin:0 0 8px 0;"
+                + "white-space:nowrap;"
+                + "overflow:hidden;"
+                + "text-overflow:ellipsis;"
+                + "}"
+        );
 
-            ".titulo-catalogo p{" +
-            "color:#aaa1b4;" +
-            "}" +
+        html.append(
+                ".genero{"
+                + "color:#a855f7;"
+                + "font-size:13px;"
+                + "}"
+        );
 
-            ".catalogo-jogos{" +
-            "display:grid;" +
-            "grid-template-columns:repeat(5,minmax(0,1fr));" +
-            "gap:22px;" +
-            "}" +
+        html.append(
+                ".biblioteca{"
+                + "display:block;"
+                + "text-align:center;"
+                + "background:#9d4edd;"
+                + "color:white;"
+                + "text-decoration:none;"
+                + "padding:9px;"
+                + "border-radius:7px;"
+                + "margin-top:12px;"
+                + "font-size:13px;"
+                + "}"
+        );
 
-            ".card-jogo{" +
-            "background:linear-gradient(145deg,#211a2b,#17131d);" +
-            "border:1px solid #30263a;" +
-            "border-radius:14px;" +
-            "overflow:hidden;" +
-            "text-align:center;" +
-            "transition:transform .2s,border-color .2s,box-shadow .2s;" +
-            "}" +
+        html.append(
+                ".vazio{"
+                + "padding:40px 0;"
+                + "color:#aaa0b7;"
+                + "}"
+        );
 
-            ".card-jogo:hover{" +
-            "transform:translateY(-6px);" +
-            "border-color:rgba(168,85,247,.65);" +
-            "box-shadow:0 15px 35px rgba(124,58,237,.18);" +
-            "}" +
+        html.append(
+                ".rodape{"
+                + "margin-top:80px;"
+                + "border-top:1px solid #30263b;"
+                + "padding:28px;"
+                + "text-align:center;"
+                + "color:#aaa0b7;"
+                + "}"
+        );
 
-            ".card-jogo img{" +
-            "width:100%;" +
-            "height:280px;" +
-            "object-fit:cover;" +
-            "display:block;" +
-            "transition:transform .3s;" +
-            "}" +
+        html.append(
+                "@media(max-width:1000px){"
+                + ".grid{"
+                + "grid-template-columns:"
+                + "repeat(4,1fr);"
+                + "}"
+                + "}"
+        );
 
-            ".card-jogo:hover img{" +
-            "transform:scale(1.035);" +
-            "}" +
+        html.append(
+                "@media(max-width:800px){"
+                + ".grid{"
+                + "grid-template-columns:"
+                + "repeat(3,1fr);"
+                + "}"
+                + ".menu{gap:15px;}"
+                + "}"
+        );
 
-            ".card-jogo-conteudo{" +
-            "padding:18px;" +
-            "}" +
-
-            ".card-jogo h3{" +
-            "font-size:17px;" +
-            "margin:0 0 8px;" +
-            "min-height:40px;" +
-            "display:flex;" +
-            "align-items:center;" +
-            "justify-content:center;" +
-            "color:white;" +
-            "}" +
-
-            ".genero{" +
-            "color:#aaa1b4;" +
-            "font-size:13px;" +
-            "margin-bottom:8px;" +
-            "}" +
-
-            ".nota{" +
-            "color:#c084fc;" +
-            "font-weight:bold;" +
-            "margin-bottom:12px;" +
-            "}" +
-
-            ".botao-biblioteca{" +
-            "display:block;" +
-            "width:100%;" +
-            "box-sizing:border-box;" +
-            "padding:11px 15px;" +
-            "margin-top:12px;" +
-            "background:linear-gradient(135deg,#7c3aed,#a855f7);" +
-            "color:white;" +
-            "text-decoration:none;" +
-            "border-radius:8px;" +
-            "font-size:13px;" +
-            "font-weight:bold;" +
-            "transition:.2s;" +
-            "}" +
-
-            ".botao-biblioteca:hover{" +
-            "transform:translateY(-2px);" +
-            "}" +
-
-            ".resultado{" +
-            "color:#aaa1b4;" +
-            "margin-bottom:20px;" +
-            "}" +
-
-            "@media(max-width:1000px){" +
-            ".catalogo-jogos{" +
-            "grid-template-columns:repeat(4,minmax(0,1fr));" +
-            "}" +
-            "}" +
-
-            "@media(max-width:800px){" +
-            "header{" +
-            "flex-direction:column;" +
-            "gap:15px;" +
-            "}" +
-            "header nav{" +
-            "flex-wrap:wrap;" +
-            "justify-content:center;" +
-            "}" +
-            ".catalogo-jogos{" +
-            "grid-template-columns:repeat(3,minmax(0,1fr));" +
-            "}" +
-            "}" +
-
-            "@media(max-width:600px){" +
-            "main{" +
-            "padding:20px 15px 40px;" +
-            "}" +
-            ".catalogo-jogos{" +
-            "grid-template-columns:repeat(2,minmax(0,1fr));" +
-            "gap:14px;" +
-            "}" +
-            ".card-jogo img{" +
-            "height:220px;" +
-            "}" +
-            "}" +
-
-            "@media(max-width:420px){" +
-            ".catalogo-jogos{" +
-            "grid-template-columns:1fr;" +
-            "}" +
-            ".card-jogo img{" +
-            "height:300px;" +
-            "}" +
-            "}"
+        html.append(
+                "@media(max-width:600px){"
+                + ".cabecalho{"
+                + "padding:0 15px;"
+                + "}"
+                + ".menu{display:none;}"
+                + ".grid{"
+                + "grid-template-columns:"
+                + "repeat(2,1fr);"
+                + "}"
+                + ".capa{height:230px;}"
+                + "}"
         );
 
         html.append("</style>");
@@ -1026,539 +816,471 @@ public class JogosServlet extends HttpServlet {
 
         html.append("<body>");
 
-
         /*
-         * ======================================================
-         * HEADER
-         * ======================================================
+         * CABEÇALHO
          */
-
-        html.append("<header>");
-
         html.append(
-            "<div class='logo-area'>"
+                "<header class='cabecalho'>"
         );
 
         html.append(
-            "<img src='icon.png' " +
-            "alt='Logo Inventory' " +
-            "class='logo-header'>"
+                "<a class='logo' "
+                + "href='index.html'>"
+                + "👻 Inventory"
+                + "</a>"
+        );
+
+        html.append("<nav class='menu'>");
+
+        html.append(
+                "<a href='index.html'>Início</a>"
         );
 
         html.append(
-            "<h1>Inventory</h1>"
-        );
-
-        html.append("</div>");
-
-
-        html.append("<nav>");
-
-        html.append(
-            "<a href='index.html'>Início</a>"
+                "<a href='buscar-usuarios.html'>"
+                + "Buscar usuários"
+                + "</a>"
         );
 
         html.append(
-            "<a href='buscar-usuarios.html'>Buscar usuários</a>"
+                "<a href='jogos'>Jogos</a>"
         );
 
         html.append(
-            "<a href='jogos'>Jogos</a>"
+                "<a href='perfil'>Meu Perfil</a>"
         );
 
         html.append(
-            "<a href='perfil'>Meu Perfil</a>"
+                "<a href='biblioteca'>Biblioteca</a>"
         );
 
         html.append(
-            "<a href='biblioteca'>Biblioteca</a>"
+                "<a href='listas'>Listas</a>"
         );
 
         html.append(
-            "<a href='listas'>Listas</a>"
-        );
-
-        html.append(
-            "<a href='logout'>Sair</a>"
+                "<a href='logout'>Sair</a>"
         );
 
         html.append("</nav>");
 
         html.append("</header>");
 
+        html.append(
+                "<main class='container'>"
+        );
 
         /*
-         * ======================================================
-         * MAIN
-         * ======================================================
+         * BEM-VINDO
          */
-
-        html.append("<main>");
-
-
         html.append(
-            "<section class='inicio'>"
+                "<section class='boas-vindas'>"
         );
 
         html.append(
-            "<h2>Bem-vindo ao " +
-            "<span>Inventory</span></h2>"
+                "<h1>"
+                + "Bem-vindo ao "
+                + "<span class='roxo'>Inventory</span>"
+                + "</h1>"
         );
 
         html.append(
-            "<p>Descubra jogos, avalie suas experiências " +
-            "e monte sua biblioteca.</p>"
+                "<p>"
+                + "Descubra jogos, avalie suas experiências "
+                + "e monte sua biblioteca."
+                + "</p>"
         );
 
-        html.append(
-            "</section>"
-        );
-
+        html.append("</section>");
 
         /*
-         * ======================================================
-         * BUSCA + FILTRO
-         * ======================================================
+         * BUSCA
          */
-
         html.append(
-            "<section class='busca'>"
+                "<section class='busca-box'>"
         );
 
         html.append(
-            "<h2>🔎 Buscar jogo</h2>"
+                "<h2>🔎 Buscar jogo</h2>"
         );
-
 
         html.append(
-            "<form class='busca-form' " +
-            "method='GET' action='jogos'>"
+                "<form method='GET' action='jogos'>"
         );
-
-
-        /*
-         * CAMPO DE BUSCA
-         */
 
         html.append(
-            "<input type='text' " +
-            "name='busca' " +
-            "placeholder='Digite o nome do jogo...' "
+                "<input "
+                + "class='campo' "
+                + "type='text' "
+                + "name='busca' "
+                + "placeholder='Digite o nome do jogo...' "
+                + "value='"
+                + escaparHTML(busca)
+                + "'>"
         );
-
-
-        if (busca != null) {
-
-            html.append(
-                "value='" +
-                escapeHtml(busca) +
-                "' "
-            );
-        }
-
-
-        html.append(">");
-
 
         /*
          * FILTRO DE GÊNERO
          */
-
         html.append(
-            "<select name='genero'>"
+                "<select "
+                + "class='campo' "
+                + "name='genero'>"
         );
 
-
         html.append(
-            "<option value=''>Todos os gêneros</option>"
+                "<option value=''>"
+                + "Todos os gêneros"
+                + "</option>"
         );
-
 
         for (String[] g : GENEROS) {
 
-            html.append(
-                "<option value='" +
-                escapeHtml(g[0]) +
-                "'"
-            );
-
-
-            if (
-                genero != null &&
-                genero.equals(g[0])
-            ) {
-
-                html.append(" selected");
-            }
-
+            String selecionado =
+                    g[0].equals(genero)
+                    ? " selected"
+                    : "";
 
             html.append(
-                ">" +
-                escapeHtml(g[0]) +
-                "</option>"
+                    "<option value='"
+                    + escaparHTML(g[0])
+                    + "'"
+                    + selecionado
+                    + ">"
+                    + escaparHTML(g[0])
+                    + "</option>"
             );
         }
 
-
         html.append("</select>");
 
-
         html.append(
-            "<button type='submit'>Buscar</button>"
+                "<button "
+                + "class='botao' "
+                + "type='submit'>"
+                + "Buscar"
+                + "</button>"
         );
-
 
         html.append("</form>");
 
         html.append("</section>");
 
+        /*
+         * JOGOS
+         */
+        html.append(
+                "<section class='titulo-jogos'>"
+        );
+
+        html.append(
+                "<h2>🎮 Jogos populares</h2>"
+        );
+
+        html.append(
+                "<p>"
+                + "Confira os jogos disponíveis no Inventory."
+                + "</p>"
+        );
 
         /*
-         * ======================================================
-         * CATÁLOGO
-         * ======================================================
+         * CONSULTA
          */
+        String sql;
 
-        html.append(
-            "<section>"
-        );
+        boolean temBusca =
+                !busca.trim().isEmpty();
 
+        boolean temGenero =
+                !genero.trim().isEmpty();
 
-        html.append(
-            "<div class='titulo-catalogo'>"
-        );
+        if (temBusca && temGenero) {
 
+            sql =
+                    "SELECT id,nome,genero,nota,imagem "
+                    + "FROM jogo "
+                    + "WHERE LOWER(nome) LIKE ? "
+                    + "AND genero = ? "
+                    + "ORDER BY nome "
+                    + "LIMIT 500";
 
-        html.append(
-            "<h2>🎮 Jogos populares</h2>"
-        );
+        } else if (temBusca) {
 
+            sql =
+                    "SELECT id,nome,genero,nota,imagem "
+                    + "FROM jogo "
+                    + "WHERE LOWER(nome) LIKE ? "
+                    + "ORDER BY nome "
+                    + "LIMIT 500";
 
-        html.append(
-            "<p>Confira os jogos disponíveis no Inventory.</p>"
-        );
+        } else if (temGenero) {
 
-
-        html.append("</div>");
-
-
-        html.append(
-            "<p class='resultado'>" +
-            jogos.size() +
-            " jogos encontrados</p>"
-        );
-
-
-        html.append(
-            "<div class='catalogo-jogos'>"
-        );
-
-
-        if (jogos.isEmpty()) {
-
-            html.append(
-                "<p style='color:#aaa1b4;'>" +
-                "Nenhum jogo encontrado.</p>"
-            );
+            sql =
+                    "SELECT id,nome,genero,nota,imagem "
+                    + "FROM jogo "
+                    + "WHERE genero = ? "
+                    + "ORDER BY nome "
+                    + "LIMIT 500";
 
         } else {
 
-
-            for (Jogo jogo : jogos) {
-
-                html.append(
-                    "<article class='card-jogo'>"
-                );
-
-
-                /*
-                 * CAPA
-                 */
-
-                html.append(
-                    "<img src='" +
-                    escapeHtml(jogo.imagem) +
-                    "' " +
-                    "alt='" +
-                    escapeHtml(jogo.nome) +
-                    "' " +
-
-                    "onerror=\"" +
-                    "this.onerror=null;" +
-                    "this.src='https://cdn.cloudflare.steamstatic.com/steam/apps/" +
-                    jogo.id +
-                    "/header.jpg';" +
-                    "\">"
-                );
-
-
-                html.append(
-                    "<div class='card-jogo-conteudo'>"
-                );
-
-
-                html.append(
-                    "<h3>" +
-                    escapeHtml(jogo.nome) +
-                    "</h3>"
-                );
-
-
-                html.append(
-                    "<p class='genero'>" +
-                    escapeHtml(jogo.genero) +
-                    "</p>"
-                );
-
-
-                html.append(
-                    "<p class='nota'>⭐ " +
-                    String.format(
-                        "%.1f",
-                        jogo.nota
-                    ) +
-                    "</p>"
-                );
-
-
-                html.append(
-                    "<a class='botao-biblioteca' " +
-                    "href='adicionar-biblioteca?id=" +
-                    jogo.id +
-                    "'>" +
-                    "+ Minha biblioteca" +
-                    "</a>"
-                );
-
-
-                html.append(
-                    "</div>"
-                );
-
-
-                html.append(
-                    "</article>"
-                );
-            }
+            sql =
+                    "SELECT id,nome,genero,nota,imagem "
+                    + "FROM jogo "
+                    + "ORDER BY nome "
+                    + "LIMIT 500";
         }
 
-
-        html.append(
-            "</div>"
-        );
-
-
-        html.append(
-            "</section>"
-        );
-
-
-        html.append(
-            "</main>"
-        );
-
-
-        /*
-         * ======================================================
-         * FOOTER
-         * ======================================================
-         */
-
-        html.append(
-            "<footer style='" +
-            "text-align:center;" +
-            "padding:25px;" +
-            "background:#0d0914;" +
-            "border-top:1px solid #30263a;" +
-            "color:#8c8199;'>" +
-            "<p>© 2026 Inventory</p>" +
-            "</footer>"
-        );
-
-
-        html.append(
-            "</body></html>"
-        );
-
-
-        response.getWriter().write(
-            html.toString()
-        );
-    }
-
-
-    /*
-     * ==========================================================
-     * BUSCAR NO SQLITE
-     * ==========================================================
-     */
-
-    private List<Jogo> buscarJogos(
-            String busca,
-            String genero) {
-
-
-        List<Jogo> lista =
-            new ArrayList<Jogo>();
-
-
-        StringBuilder sql =
-            new StringBuilder(
-                "SELECT id,nome,genero,nota,imagem " +
-                "FROM jogo WHERE 1=1"
-            );
-
-
-        List<String> parametros =
-            new ArrayList<String>();
-
-
-        if (
-            busca != null &&
-            !busca.trim().isEmpty()
-        ) {
-
-            sql.append(
-                " AND LOWER(nome) LIKE ?"
-            );
-
-            parametros.add(
-                "%" +
-                busca.toLowerCase() +
-                "%"
-            );
-        }
-
-
-        if (
-            genero != null &&
-            !genero.trim().isEmpty()
-        ) {
-
-            sql.append(
-                " AND genero = ?"
-            );
-
-            parametros.add(
-                genero
-            );
-        }
-
-
-        sql.append(
-            " ORDER BY nome ASC"
-        );
-
+        int quantidade = 0;
 
         try (
-            Connection conexao =
-                Conexao.conectar();
-
-            PreparedStatement ps =
-                conexao.prepareStatement(
-                    sql.toString()
-                )
+            Connection conn = Conexao.conectar();
+            PreparedStatement stmt =
+                    conn.prepareStatement(sql)
         ) {
 
+            if (temBusca && temGenero) {
 
-            int posicao = 1;
+                stmt.setString(
+                        1,
+                        "%"
+                        + busca.toLowerCase()
+                        + "%"
+                );
 
+                stmt.setString(
+                        2,
+                        genero
+                );
 
-            for (String parametro : parametros) {
+            } else if (temBusca) {
 
-                ps.setString(
-                    posicao++,
-                    parametro
+                stmt.setString(
+                        1,
+                        "%"
+                        + busca.toLowerCase()
+                        + "%"
+                );
+
+            } else if (temGenero) {
+
+                stmt.setString(
+                        1,
+                        genero
                 );
             }
 
-
             ResultSet rs =
-                ps.executeQuery();
+                    stmt.executeQuery();
 
+            /*
+             * GRID
+             */
+            html.append(
+                    "<div class='grid'>"
+            );
 
             while (rs.next()) {
 
-                Jogo jogo =
-                    new Jogo();
+                quantidade++;
 
+                int id =
+                        rs.getInt("id");
 
-                jogo.id =
-                    rs.getInt("id");
+                String nome =
+                        rs.getString("nome");
 
+                String gen =
+                        rs.getString("genero");
 
-                jogo.nome =
-                    rs.getString("nome");
+                double nota =
+                        rs.getDouble("nota");
 
+                String imagem =
+                        rs.getString("imagem");
 
-                jogo.genero =
-                    rs.getString("genero");
+                if (
+                    imagem == null ||
+                    imagem.trim().isEmpty()
+                ) {
 
+                    imagem =
+                            "https://cdn.cloudflare.steamstatic.com/"
+                            + "steam/apps/"
+                            + id
+                            + "/library_600x900.jpg";
+                }
 
-                jogo.nota =
-                    rs.getDouble("nota");
+                html.append(
+                        "<article class='card'>"
+                );
 
+                /*
+                 * CAPA STEAM
+                 */
+                html.append(
+                        "<img "
+                        + "class='capa' "
+                        + "src='"
+                        + escaparHTML(imagem)
+                        + "' "
+                        + "alt='"
+                        + escaparHTML(nome)
+                        + "' "
+                        + "loading='lazy' "
+                        + "onerror=\"this.onerror=null;"
+                        + "this.src='"
+                        + "https://cdn.cloudflare.steamstatic.com/"
+                        + "steam/apps/"
+                        + id
+                        + "/header.jpg';\">"
+                );
 
-                jogo.imagem =
-                    rs.getString("imagem");
+                html.append(
+                        "<div class='card-info'>"
+                );
 
+                html.append(
+                        "<h3 title='"
+                        + escaparHTML(nome)
+                        + "'>"
+                        + escaparHTML(nome)
+                        + "</h3>"
+                );
 
-                lista.add(jogo);
+                html.append(
+                        "<div class='genero'>"
+                        + escaparHTML(gen)
+                        + "</div>"
+                );
+
+                if (nota > 0) {
+
+                    html.append(
+                            "<div>"
+                            + "⭐ "
+                            + nota
+                            + "</div>"
+                    );
+                }
+
+                html.append(
+                        "<a "
+                        + "class='biblioteca' "
+                        + "href='adicionar-biblioteca?id="
+                        + id
+                        + "'>"
+                        + "+ Minha biblioteca"
+                        + "</a>"
+                );
+
+                html.append("</div>");
+
+                html.append("</article>");
             }
 
+            rs.close();
+
+            html.append("</div>");
 
         } catch (Exception e) {
 
             System.out.println(
-                "Erro ao buscar jogos:"
+                    "Erro ao buscar jogos:"
             );
 
             e.printStackTrace();
+
+            html.append(
+                    "<div class='vazio'>"
+                    + "Erro ao carregar os jogos."
+                    + "</div>"
+            );
         }
 
+        /*
+         * CONTADOR
+         */
+        html.append(
+                "<p>"
+                + quantidade
+                + " jogos encontrados"
+                + "</p>"
+        );
 
-        return lista;
+        /*
+         * NENHUM JOGO
+         */
+        if (quantidade == 0) {
+
+            html.append(
+                    "<div class='vazio'>"
+                    + "Nenhum jogo encontrado."
+                    + "</div>"
+            );
+        }
+
+        html.append("</section>");
+
+        html.append("</main>");
+
+        /*
+         * RODAPÉ
+         */
+        html.append(
+                "<footer class='rodape'>"
+                + "© 2026 Inventory"
+                + "</footer>"
+        );
+
+        html.append("</body>");
+
+        html.append("</html>");
+
+        return html.toString();
     }
 
-
     /*
-     * ==========================================================
-     * ESCAPAR HTML
-     * ==========================================================
+     * =========================================================
+     * LIMPA JSON
+     * =========================================================
      */
-
-    private String escapeHtml(String texto) {
+    private String limparTextoJSON(
+            String texto
+    ) {
 
         if (texto == null) {
             return "";
         }
 
-
         return texto
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("\"", "&quot;")
-            .replace("'", "&#39;");
+                .replace("\\\"", "\"")
+                .replace("\\\\", "\\")
+                .replace("\\/", "/")
+                .replace("\\n", " ")
+                .replace("\\r", " ")
+                .replace("\\t", " ")
+                .trim();
     }
 
-
     /*
-     * ==========================================================
-     * CLASSE JOGO
-     * ==========================================================
+     * =========================================================
+     * ESCAPA HTML
+     * =========================================================
      */
+    private String escaparHTML(
+            String texto
+    ) {
 
-    private static class Jogo {
+        if (texto == null) {
+            return "";
+        }
 
-        int id;
-
-        String nome;
-
-        String genero;
-
-        double nota;
-
-        String imagem;
+        return texto
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 }
