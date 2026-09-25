@@ -28,31 +28,58 @@ public class JogosServlet extends HttpServlet {
         out.println("<head>");
         out.println("<meta charset='UTF-8'>");
         out.println("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-        out.println("<title>Jogos - Inventory</title>");
+        out.println("<title>Jogos - GameBoxd</title>");
 
         out.println("<style>");
-        out.println("body{margin:0;background:#0b0d0f;color:white;font-family:Arial,sans-serif;}");
-        out.println("header{background:#11151a;padding:20px 40px;border-bottom:1px solid #333;}");
-        out.println("header a{color:white;text-decoration:none;margin-right:25px;}");
-        out.println(".container{max-width:1200px;margin:40px auto;padding:20px;}");
-        out.println("h1{font-size:40px;}");
-        out.println(".grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;}");
-        out.println(".card{background:#15191e;border:1px solid #292f36;border-radius:10px;padding:20px;}");
-        out.println(".card h2{margin-top:0;}");
-        out.println(".info{color:#9da4ad;line-height:1.7;}");
-        out.println("</style>");
+        out.println("body {");
+        out.println("    font-family: Arial, sans-serif;");
+        out.println("    background: #111;");
+        out.println("    color: white;");
+        out.println("    margin: 0;");
+        out.println("    padding: 30px;");
+        out.println("}");
 
+        out.println("h1 {");
+        out.println("    text-align: center;");
+        out.println("}");
+
+        out.println(".jogos {");
+        out.println("    display: grid;");
+        out.println("    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));");
+        out.println("    gap: 20px;");
+        out.println("    max-width: 1200px;");
+        out.println("    margin: 30px auto;");
+        out.println("}");
+
+        out.println(".jogo {");
+        out.println("    background: #222;");
+        out.println("    border-radius: 10px;");
+        out.println("    padding: 15px;");
+        out.println("    box-shadow: 0 0 10px rgba(0,0,0,0.5);");
+        out.println("}");
+
+        out.println(".jogo img {");
+        out.println("    width: 100%;");
+        out.println("    height: 280px;");
+        out.println("    object-fit: cover;");
+        out.println("    border-radius: 8px;");
+        out.println("}");
+
+        out.println(".jogo h2 {");
+        out.println("    font-size: 20px;");
+        out.println("}");
+
+        out.println(".jogo p {");
+        out.println("    color: #ccc;");
+        out.println("}");
+
+        out.println("</style>");
         out.println("</head>");
+
         out.println("<body>");
 
-        out.println("<header>");
-        out.println("<a href='index.jsp'>INVENTORY</a>");
-        out.println("<a href='jogos'>Jogos</a>");
-        out.println("</header>");
-
-        out.println("<div class='container'>");
         out.println("<h1>Jogos</h1>");
-        out.println("<div class='grid'>");
+        out.println("<div class='jogos'>");
 
         try (Connection conn = Conexao.conectar()) {
 
@@ -62,70 +89,41 @@ public class JogosServlet extends HttpServlet {
             try (PreparedStatement stmt = conn.prepareStatement(sql);
                  ResultSet rs = stmt.executeQuery()) {
 
-                boolean encontrou = false;
-
                 while (rs.next()) {
 
-                    encontrou = true;
+                    String titulo = rs.getString("titulo");
+                    String genero = rs.getString("genero");
+                    String plataforma = rs.getString("plataforma");
+                    int ano = rs.getInt("ano_lancamento");
+                    String capa = rs.getString("capa");
 
-                    out.println("<div class='card'>");
+                    out.println("<div class='jogo'>");
 
-                    out.println("<h2>" +
-                            escapar(rs.getString("titulo")) +
-                            "</h2>");
+                    if (capa != null && !capa.isEmpty()) {
+                        out.println("<img src='" + capa + "' alt='Capa de " + titulo + "'>");
+                    }
 
-                    out.println("<div class='info'>");
-
-                    out.println("<strong>Gênero:</strong> " +
-                            escapar(rs.getString("genero")) +
-                            "<br>");
-
-                    out.println("<strong>Plataforma:</strong> " +
-                            escapar(rs.getString("plataforma")) +
-                            "<br>");
-
-                    out.println("<strong>Ano:</strong> " +
-                            rs.getInt("ano_lancamento"));
+                    out.println("<h2>" + titulo + "</h2>");
+                    out.println("<p><strong>Gênero:</strong> " + genero + "</p>");
+                    out.println("<p><strong>Plataforma:</strong> " + plataforma + "</p>");
+                    out.println("<p><strong>Ano:</strong> " + ano + "</p>");
 
                     out.println("</div>");
-
-                    out.println("</div>");
-                }
-
-                if (!encontrou) {
-                    out.println("<p>Nenhum jogo cadastrado.</p>");
                 }
             }
 
         } catch (Exception e) {
 
-            out.println("<h2>Erro ao carregar os jogos</h2>");
-            out.println("<pre>");
-            e.printStackTrace(out);
-            out.println("</pre>");
+            out.println("<div style='text-align:center;'>");
+            out.println("<h2>Erro ao carregar os jogos.</h2>");
+            out.println("<p>" + e.getMessage() + "</p>");
+            out.println("</div>");
 
-            System.out.println("ERRO AO CARREGAR JOGOS");
             e.printStackTrace();
         }
 
         out.println("</div>");
-        out.println("</div>");
-
         out.println("</body>");
         out.println("</html>");
-    }
-
-    private String escapar(String texto) {
-
-        if (texto == null) {
-            return "";
-        }
-
-        return texto
-                .replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
-                .replace("'", "&#39;");
     }
 }
