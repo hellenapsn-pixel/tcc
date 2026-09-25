@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Cadastro - Inventory</title>
+
+    <link rel="icon" type="image/png" href="icon.png">
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<header>
+
+    <h1>Inventory</h1>
+
+    <nav>
+        <a href="index.html">Início</a>
+        <a href="#">Jogos</a>
+        <a href="#">Biblioteca</a>
+        <a href="login.html">Login</a>
+    </nav>
+
+</header>
+
+
+<main class="cadastro-container">
+
+    <div class="cadastro-box">
+
+        <h2>Criar conta</h2>
+
+        <form action="cadastro"
+              method="POST"
+              enctype="multipart/form-data">
+
+            <input
+                type="text"
+                name="nome"
+                placeholder="Nome"
+                required
+            >
+
+            <input
+                type="text"
+                name="username"
+                placeholder="Nome de usuário (@username)"
+                required
+            >
+
+            <input
+                type="email"
+                name="email"
+                placeholder="E-mail"
+                required
+            >
+
+            <input
+                type="password"
+                name="senha"
+                placeholder="Senha"
+                required
+            >
+
+            
+            <input
+                type="text"
+                name="pais"
+                placeholder="País"
+            >
+
+            <select name="plataforma">
+
+                <option value="">
+                    Plataforma favorita
+                </option>
+
+                <option value="PlayStation">
+                    PlayStation
+                </option>
+
+                <option value="Xbox">
+                    Xbox
+                </option>
+
+                <option value="PC">
+                    PC
+                </option>
+
+                <option value="Nintendo">
+                    Nintendo
+                </option>
+
+            </select>
+
+            <textarea
+                name="bio"
+                placeholder="Fale um pouco sobre você..."
+            ></textarea>
+
+            <label for="foto">
+                Foto de perfil:
+            </label>
+
+            <input
+                type="file"
+                id="foto"
+                name="foto"
+                accept="image/*"
+            >
+
+            <button type="submit">
+                Criar conta
+            </button>
+
+        </form>
+
+        <p>
+            Já possui uma conta?
+            <a href="login.html">Entrar</a>
+        </p>
+
+    </div>
+
+</main>
+
+</body>
+
+</html>

@@ -1,7 +1,9 @@
 package controller;
+
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.Statement;
 
 public class JogosServlet {
 
@@ -48,6 +50,9 @@ public class JogosServlet {
             System.out.println("BANCO: " + URL);
             System.out.println("=================================");
 
+            // Garante que as tabelas existam antes de realizar consultas
+            criarTabelasSeNaoExistirem(conexao);
+
             return conexao;
 
         } catch (Exception e) {
@@ -57,6 +62,27 @@ public class JogosServlet {
             e.printStackTrace();
 
             return null;
+        }
+    }
+
+    /*
+     * Cria a tabela 'jogo' (e outras se necessário) caso o banco seja novo
+     */
+    private static void criarTabelasSeNaoExistirem(Connection conexao) {
+        String sqlJogo = "CREATE TABLE IF NOT EXISTS jogo (" +
+                         "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                         "titulo TEXT NOT NULL, " +
+                         "genero TEXT, " +
+                         "plataforma TEXT, " +
+                         "ano_lancamento INTEGER, " +
+                         "capa TEXT" +
+                         ");";
+
+        try (Statement stmt = conexao.createStatement()) {
+            stmt.execute(sqlJogo);
+        } catch (Exception e) {
+            System.out.println("ERRO AO CRIAR TABELAS:");
+            e.printStackTrace();
         }
     }
 

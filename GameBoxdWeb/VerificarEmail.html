@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Verificar e-mail - Inventory</title>
+
+    <link rel="icon"
+          type="image/png"
+          href="icon.png">
+
+    <link rel="stylesheet"
+          href="style.css">
+
+    <style>
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                radial-gradient(
+                    circle at top,
+                    #35105f,
+                    #160b22 45%,
+                    #09060d
+                );
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        .verificacao-container {
+            width: 430px;
+            max-width: 90%;
+        }
+
+        .verificacao-box {
+            background: #181020;
+            border: 1px solid #54256f;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow:
+                0 20px 60px rgba(0,0,0,.45);
+        }
+
+        .verificacao-box h1 {
+            color: #c084fc;
+            margin-bottom: 10px;
+        }
+
+        .verificacao-box p {
+            color: #aaa;
+            line-height: 1.6;
+        }
+
+        .email {
+            color: #d8b4fe;
+            font-weight: bold;
+            word-break: break-word;
+        }
+
+        .codigo {
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 20px;
+            padding: 14px;
+            background: #0f0a14;
+            color: white;
+            border: 1px solid #5b3475;
+            border-radius: 10px;
+            font-size: 22px;
+            text-align: center;
+            letter-spacing: 6px;
+        }
+
+        .botao {
+            width: 100%;
+            margin-top: 20px;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background:
+                linear-gradient(
+                    135deg,
+                    #7c3aed,
+                    #a855f7
+                );
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .botao:hover {
+            opacity: .9;
+        }
+
+        .voltar {
+            display: inline-block;
+            margin-top: 20px;
+            color: #c084fc;
+            text-decoration: none;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<main class="verificacao-container">
+
+    <div class="verificacao-box">
+
+        <h1>Verifique seu e-mail</h1>
+
+        <p>
+            Enviamos um código de 6 números para:
+        </p>
+
+        <p class="email"
+           id="emailExibido">
+        </p>
+
+        <form
+            action="verificar-email"
+            method="POST">
+
+            <input
+                type="hidden"
+                name="email"
+                id="email"
+            >
+
+            <input
+                class="codigo"
+                type="text"
+                name="codigo"
+                maxlength="6"
+                minlength="6"
+                inputmode="numeric"
+                pattern="[0-9]{6}"
+                placeholder="000000"
+                required
+            >
+
+            <button
+                class="botao"
+                type="submit">
+
+                Verificar e-mail
+
+            </button>
+
+        </form>
+
+        <a
+            class="voltar"
+            href="cadastro.html">
+
+            Voltar para o cadastro
+
+        </a>
+
+    </div>
+
+</main>
+
+<script>
+
+    const parametros =
+        new URLSearchParams(
+            window.location.search
+        );
+
+    const email =
+        parametros.get("email") || "";
+
+    document.getElementById("email").value =
+        email;
+
+    document.getElementById("emailExibido")
+        .innerText =
+        email;
+
+</script>
+
+</body>
+
+</html>

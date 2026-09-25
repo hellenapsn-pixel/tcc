@@ -1,0 +1,566 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Buscar usuários - Inventory</title>
+    <link rel="icon" type="image/png" href="icon.png">
+
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+
+        body {
+            background:
+                radial-gradient(
+                    circle at top,
+                    #32134d,
+                    #12091b 55%,
+                    #09050d
+                );
+            min-height: 100vh;
+        }
+
+        .busca-container {
+            max-width: 1000px;
+            margin: 45px auto;
+            padding: 20px;
+        }
+
+        .busca-box {
+            background: linear-gradient(
+                145deg,
+                #21142c,
+                #140b1b
+            );
+
+            border: 1px solid #45245d;
+            border-radius: 22px;
+            padding: 35px;
+
+            box-shadow:
+                0 15px 50px rgba(0,0,0,.4);
+        }
+
+        .titulo-busca {
+            text-align: center;
+            font-size: 34px;
+            margin-bottom: 8px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #a855f7,
+                    #c084fc,
+                    #7c3aed
+                );
+
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitulo {
+            text-align: center;
+            color: #999;
+            margin-bottom: 30px;
+        }
+
+        .campo-busca {
+            display: flex;
+            gap: 10px;
+            max-width: 700px;
+            margin: 0 auto 35px;
+        }
+
+        .campo-busca input {
+            flex: 1;
+            padding: 15px 18px;
+
+            background: #100817;
+            color: white;
+
+            border: 1px solid #45245d;
+            border-radius: 10px;
+
+            outline: none;
+            font-size: 16px;
+
+            transition: .25s;
+        }
+
+        .campo-busca input:focus {
+            border-color: #a855f7;
+
+            box-shadow:
+                0 0 15px rgba(168,85,247,.2);
+        }
+
+        .campo-busca button {
+            padding: 0 25px;
+
+            border: none;
+            border-radius: 10px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #7c3aed,
+                    #9333ea
+                );
+
+            color: white;
+            font-weight: bold;
+
+            cursor: pointer;
+
+            transition: .25s;
+        }
+
+        .campo-busca button:hover {
+            transform: translateY(-2px);
+
+            box-shadow:
+                0 8px 20px rgba(124,58,237,.35);
+        }
+
+        .resultado-usuarios {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fill,
+                    minmax(250px, 1fr)
+                );
+
+            gap: 20px;
+        }
+
+        .usuario-card {
+            background: #160d1e;
+
+            border: 1px solid #352044;
+
+            border-radius: 16px;
+
+            padding: 22px;
+
+            text-align: center;
+
+            transition: .3s;
+        }
+
+        .usuario-card:hover {
+            transform: translateY(-5px);
+
+            border-color: #7c3aed;
+
+            box-shadow:
+                0 12px 30px rgba(0,0,0,.3);
+        }
+
+        .foto-usuario {
+            width: 105px;
+            height: 105px;
+
+            border-radius: 50%;
+
+            object-fit: cover;
+
+            border: 4px solid #7c3aed;
+
+            box-shadow:
+                0 0 25px
+                rgba(124,58,237,.3);
+
+            margin-bottom: 12px;
+        }
+
+        .sem-foto-usuario {
+            width: 105px;
+            height: 105px;
+
+            margin: 0 auto 12px;
+
+            border-radius: 50%;
+
+            background: #251532;
+
+            border: 4px solid #7c3aed;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            color: #888;
+        }
+
+        .usuario-nome {
+            color: white;
+
+            font-size: 20px;
+
+            margin: 8px 0 3px;
+        }
+
+        .usuario-username {
+            color: #a855f7;
+
+            font-size: 14px;
+
+            margin-bottom: 15px;
+        }
+
+        .botao-perfil {
+            display: inline-block;
+
+            padding: 10px 20px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #7c3aed,
+                    #9333ea
+                );
+
+            color: white;
+
+            text-decoration: none;
+
+            border-radius: 9px;
+
+            font-weight: bold;
+
+            transition: .25s;
+        }
+
+        .botao-perfil:hover {
+            transform: translateY(-2px);
+
+            box-shadow:
+                0 8px 20px
+                rgba(124,58,237,.3);
+        }
+
+        .mensagem {
+            background: #160d1e;
+
+            border: 1px solid #352044;
+
+            padding: 30px;
+
+            border-radius: 14px;
+
+            text-align: center;
+
+            color: #999;
+
+            margin-top: 20px;
+        }
+
+        @media(max-width:600px) {
+
+            .busca-container {
+                padding: 10px;
+                margin: 25px auto;
+            }
+
+            .busca-box {
+                padding: 20px;
+            }
+
+            .campo-busca {
+                flex-direction: column;
+            }
+
+            .campo-busca button {
+                padding: 14px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<header>
+
+    <h1>Inventory</h1>
+
+    <nav>
+
+        <a href="index.html">
+            Início
+        </a>
+
+        <a href="jogos">
+            Jogos
+        </a>
+
+        <a href="biblioteca">
+            Biblioteca
+        </a>
+
+        <a href="buscar-usuarios.html">
+            Buscar usuários
+        </a>
+
+        <a href="perfil">
+            Meu Perfil
+        </a>
+
+        <a href="logout">
+            Sair
+        </a>
+
+    </nav>
+
+</header>
+
+
+<main class="busca-container">
+
+    <div class="busca-box">
+
+        <h2 class="titulo-busca">
+            🔎 Buscar usuários
+        </h2>
+
+        <p class="subtitulo">
+            Encontre outros jogadores do Inventory.
+        </p>
+
+
+        <div class="campo-busca">
+
+            <input
+                type="text"
+                id="campoUsuario"
+                placeholder="Digite o nome ou username..."
+                autocomplete="off"
+            >
+
+            <button
+                type="button"
+                onclick="buscarUsuarios()"
+            >
+                Buscar
+            </button>
+
+        </div>
+
+
+        <div
+            id="resultadoUsuarios"
+            class="resultado-usuarios"
+        >
+
+            <div class="mensagem">
+
+                👥
+
+                <p>
+                    Digite um nome ou username
+                    para encontrar usuários.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</main>
+
+
+<script>
+
+    function buscarUsuarios() {
+
+        const campo =
+            document.getElementById(
+                "campoUsuario"
+            );
+
+        const resultado =
+            document.getElementById(
+                "resultadoUsuarios"
+            );
+
+        const termo =
+            campo.value.trim();
+
+        if (termo === "") {
+
+            resultado.innerHTML =
+                "<div class='mensagem'>" +
+                "Digite algo para pesquisar." +
+                "</div>";
+
+            return;
+        }
+
+        /*
+         * ATENÇÃO:
+         *
+         * Aqui é chamada a sua rota
+         * de busca de usuários.
+         */
+
+        fetch(
+            "buscar-usuarios?termo=" +
+            encodeURIComponent(termo)
+        )
+
+        .then(function(response) {
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Erro na busca"
+                );
+            }
+
+            return response.json();
+        })
+
+        .then(function(usuarios) {
+
+            resultado.innerHTML = "";
+
+            if (!usuarios ||
+                usuarios.length === 0) {
+
+                resultado.innerHTML =
+                    "<div class='mensagem'>" +
+                    "😕 Nenhum usuário encontrado." +
+                    "</div>";
+
+                return;
+            }
+
+            usuarios.forEach(
+                function(usuario) {
+
+                    const card =
+                        document.createElement(
+                            "div"
+                        );
+
+                    card.className =
+                        "usuario-card";
+
+                    let fotoHTML =
+                        "";
+
+                    if (
+                        usuario.foto &&
+                        usuario.foto.trim() !== ""
+                    ) {
+
+                        let foto =
+                            usuario.foto;
+
+                        if (
+                            !foto.startsWith(
+                                "http://"
+                            ) &&
+                            !foto.startsWith(
+                                "https://"
+                            )
+                        ) {
+
+                            foto =
+                                foto.startsWith(
+                                    "/"
+                                )
+                                ? foto
+                                : "/" + foto;
+                        }
+
+                        fotoHTML =
+                            "<img " +
+                            "class='foto-usuario' " +
+                            "src='" +
+                            foto +
+                            "' " +
+                            "alt='Foto'>";
+                    }
+
+                    else {
+
+                        fotoHTML =
+                            "<div " +
+                            "class='sem-foto-usuario'>" +
+                            "Sem foto" +
+                            "</div>";
+                    }
+
+                    card.innerHTML =
+                        fotoHTML +
+
+                        "<h3 class='usuario-nome'>" +
+                        (usuario.nome || "") +
+                        "</h3>" +
+
+                        "<div class='usuario-username'>" +
+                        "@" +
+                        (usuario.username || "") +
+                        "</div>" +
+
+                        "<a " +
+                        "class='botao-perfil' " +
+                        "href='perfil-usuario?id=" +
+                        usuario.id +
+                        "'>" +
+                        "Ver perfil" +
+                        "</a>";
+
+                    resultado.appendChild(
+                        card
+                    );
+                }
+            );
+        })
+
+        .catch(function(error) {
+
+            console.error(error);
+
+            resultado.innerHTML =
+                "<div class='mensagem'>" +
+                "❌ Não foi possível realizar a busca." +
+                "</div>";
+        });
+    }
+
+
+    document
+        .getElementById("campoUsuario")
+        .addEventListener(
+            "keypress",
+            function(event) {
+
+                if (
+                    event.key === "Enter"
+                ) {
+
+                    buscarUsuarios();
+                }
+            }
+        );
+
+</script>
+
+</body>
+
+</html>
+
