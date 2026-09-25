@@ -1,13 +1,11 @@
 package controller;
 
-import dao.Conexao;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -20,90 +18,114 @@ public class JogosServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
-        // Define o tipo de resposta como HTML em UTF-8
+
         response.setContentType("text/html;charset=UTF-8");
-        
-        // Garante que a tabela exista antes de consultar
-        criarTabelaSeNaoExistir();
 
-        try (PrintWriter out = response.getWriter()) {
-            out.println("<!DOCTYPE html>");
-            out.println("<html lang='pt-br'>");
-            out.println("<head>");
-            out.println("<meta charset='UTF-8'>");
-            out.println("<title>GameBoxd - Lista de Jogos</title>");
-            out.println("<style>");
-            out.println("body { font-family: Arial, sans-serif; background-color: #14181c; color: #ffffff; padding: 20px; }");
-            out.println("h1 { text-align: center; color: #00e054; }");
-            out.println(".grid-jogos { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 30px; }");
-            out.println(".card-jogo { background: #1f2833; border-radius: 8px; width: 200px; padding: 15px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }");
-            out.println(".card-jogo img { width: 100%; height: 280px; object-fit: cover; border-radius: 6px; }");
-            out.println(".card-jogo h3 { font-size: 1.1em; margin: 10px 0 5px; color: #ffffff; }");
-            out.println(".card-jogo p { margin: 3px 0; color: #9ab; font-size: 0.9em; }");
-            out.println("</style>");
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Meus Jogos</h1>");
-            out.println("<div class='grid-jogos'>");
+        PrintWriter out = response.getWriter();
 
-            try (Connection conn = Conexao.conectar()) {
-                if (conn != null) {
-                    String sql = "SELECT * FROM jogo";
-                    PreparedStatement stmt = conn.prepareStatement(sql);
-                    ResultSet rs = stmt.executeQuery();
+        out.println("<!DOCTYPE html>");
+        out.println("<html lang='pt-BR'>");
+        out.println("<head>");
+        out.println("<meta charset='UTF-8'>");
+        out.println("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
+        out.println("<title>Jogos - Inventory</title>");
 
-                    boolean encontrou = false;
-                    while (rs.next()) {
-                        encontrou = true;
-                        String nome = rs.getString("nome");
-                        String ano = rs.getString("ano");
-                        String genero = rs.getString("genero");
-                        String capa = rs.getString("capa");
+        out.println("<style>");
+        out.println("body{margin:0;background:#0b0d0f;color:white;font-family:Arial,sans-serif;}");
+        out.println("header{background:#11151a;padding:20px 40px;border-bottom:1px solid #333;}");
+        out.println("header a{color:white;text-decoration:none;margin-right:25px;}");
+        out.println(".container{max-width:1200px;margin:40px auto;padding:20px;}");
+        out.println("h1{font-size:40px;}");
+        out.println(".grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;}");
+        out.println(".card{background:#15191e;border:1px solid #292f36;border-radius:10px;padding:20px;}");
+        out.println(".card h2{margin-top:0;}");
+        out.println(".info{color:#9da4ad;line-height:1.7;}");
+        out.println("</style>");
 
-                        // Se a capa for nula ou vazia, define uma imagem padrão
-                        if (capa == null || capa.trim().isEmpty()) {
-                            capa = "https://via.placeholder.com/200x280?text=Sem+Capa";
-                        }
+        out.println("</head>");
+        out.println("<body>");
 
-                        out.println("<div class='card-jogo'>");
-                        out.println("  <img src='" + capa + "' alt='" + nome + "'>");
-                        out.println("  <h3>" + nome + "</h3>");
-                        out.println("  <p><strong>Ano:</strong> " + ano + "</p>");
-                        out.println("  <p><strong>Gênero:</strong> " + genero + "</p>");
-                        out.println("</div>");
-                    }
+        out.println("<header>");
+        out.println("<a href='index.jsp'>INVENTORY</a>");
+        out.println("<a href='jogos'>Jogos</a>");
+        out.println("</header>");
 
-                    if (!encontrou) {
-                        out.println("<p>Nenhum jogo encontrado no banco de dados.</p>");
-                    }
-                } else {
-                    out.println("<p style='color: red;'>Erro de conexão com o banco de dados.</p>");
+        out.println("<div class='container'>");
+        out.println("<h1>Jogos</h1>");
+        out.println("<div class='grid'>");
+
+        try (Connection conn = Conexao.conectar()) {
+
+            String sql = "SELECT id, titulo, genero, plataforma, ano_lancamento, capa "
+                    + "FROM jogo ORDER BY titulo";
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql);
+                 ResultSet rs = stmt.executeQuery()) {
+
+                boolean encontrou = false;
+
+                while (rs.next()) {
+
+                    encontrou = true;
+
+                    out.println("<div class='card'>");
+
+                    out.println("<h2>" +
+                            escapar(rs.getString("titulo")) +
+                            "</h2>");
+
+                    out.println("<div class='info'>");
+
+                    out.println("<strong>Gênero:</strong> " +
+                            escapar(rs.getString("genero")) +
+                            "<br>");
+
+                    out.println("<strong>Plataforma:</strong> " +
+                            escapar(rs.getString("plataforma")) +
+                            "<br>");
+
+                    out.println("<strong>Ano:</strong> " +
+                            rs.getInt("ano_lancamento"));
+
+                    out.println("</div>");
+
+                    out.println("</div>");
                 }
-            } catch (SQLException e) {
-                out.println("<p style='color: red;'>Erro no banco de dados: " + e.getMessage() + "</p>");
+
+                if (!encontrou) {
+                    out.println("<p>Nenhum jogo cadastrado.</p>");
+                }
             }
 
-            out.println("</div>");
-            out.println("</body>");
-            out.println("</html>");
-        }
-    }
+        } catch (Exception e) {
 
-    private void criarTabelaSeNaoExistir() {
-        String sql = "CREATE TABLE IF NOT EXISTS jogo (" +
-                     "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                     "nome TEXT NOT NULL, " +
-                     "ano TEXT, " +
-                     "genero TEXT, " +
-                     "capa TEXT);";
-        try (Connection conn = Conexao.conectar();
-             Statement stmt = conn.createStatement()) {
-            if (conn != null) {
-                stmt.execute(sql);
-            }
-        } catch (SQLException e) {
+            out.println("<h2>Erro ao carregar os jogos</h2>");
+            out.println("<pre>");
+            e.printStackTrace(out);
+            out.println("</pre>");
+
+            System.out.println("ERRO AO CARREGAR JOGOS");
             e.printStackTrace();
         }
+
+        out.println("</div>");
+        out.println("</div>");
+
+        out.println("</body>");
+        out.println("</html>");
+    }
+
+    private String escapar(String texto) {
+
+        if (texto == null) {
+            return "";
+        }
+
+        return texto
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 }
